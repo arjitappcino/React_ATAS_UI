@@ -1,0 +1,18 @@
+.test-script-builder-container {
+    display: flex;
+    justify-content: space-between;
+}
+
+.input-section {
+    flex: 1;
+    padding: 20px;
+    /* Add any additional styling as needed */
+}
+
+.json-display-section {
+    flex: 1;
+    padding: 20px;
+    background-color: white; /* Light grey background for contrast */
+    overflow: auto; /* In case JSON content is too long */
+    /* Add any additional styling as needed */
+}
