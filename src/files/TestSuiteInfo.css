@@ -1,0 +1,13 @@
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.toggle-expand-btn {
+    padding: 5px 10px;
+    margin-left: 10px;
+    cursor: pointer;
+    /* Additional styling */
+
+}

@@ -1,10 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './TestScriptBuilder.css'; // Ensure you have this CSS file for styles
+import TestSuiteInfo from './files/TestSuiteInfo';
+import TestCaseInfo from './files/TestCaseInfo';
+import TestAction from './files/TestAction';
 
 function TestScriptBuilder() {
 
     const [showModal, setShowModal] = useState(false);
     const [finalJSON, setFinalJSON] = useState('');
+    const [testActions, setTestActions] = useState([]);
+    const [testScript, setTestScript] = useState('');
+
+    useEffect(() => {
+        const savedTestScript = sessionStorage.getItem('testScript');
+        if (savedTestScript) {
+            setTestScript(JSON.parse(savedTestScript));
+        }
+    }, []);
+
+    // Save state to sessionStorage when it changes
+    useEffect(() => {
+        sessionStorage.setItem('testScript', JSON.stringify(testScript));
+    }, [testScript]);
+
+    // Reset state and clear sessionStorage
+    const resetTestScript = () => {
+        setTestScript('');
+        sessionStorage.removeItem('testScript');
+    };
+
     // State for the test suite information
     const [testSuite, setTestSuite] = useState({
         testsuite_name: '',
@@ -38,9 +62,94 @@ function TestScriptBuilder() {
         setTestCase({ ...testCase, [name]: value });
     };
 
-    const handleTestActionChange = (e) => {
-        const { name, value } = e.target;
-        setTestAction({ ...testAction, [name]: value });
+    const addTestAction = () => {
+        setTestActions([...testActions, { action_type: 'ui', action_name: '', action_fields: {} }]);
+    };
+
+    const handleActionTypeChange = (index, value) => {
+        const updatedActions = testActions.map((action, i) =>
+            i === index ? { ...action, action_type: value, action_name: '', action_fields: {} } : action
+        );
+        setTestActions(updatedActions);
+    };
+
+    const handleActionNameChange = (index, value) => {
+        const updatedActions = testActions.map((action, i) =>
+            i === index ? { ...action, action_name: value, action_fields: {} } : action
+        );
+        setTestActions(updatedActions);
+    };
+
+    const updateActionFields = (index, fieldName, value) => {
+        const updatedActions = testActions.map((action, i) => {
+            if (i === index) {
+                return {
+                    ...action,
+                    action_fields: { ...action.action_fields, [fieldName]: value }
+                };
+            }
+            return action;
+        });
+        setTestActions(updatedActions);
+    };
+
+    const renderActionFields = (action, index) => {
+        switch (action.action_name) {
+            case "ui_open_browser":
+                return (
+                    <>
+                        <div>
+                            <label>Browser Name:</label>
+                            <select onChange={(e) => updateActionFields(index, 'browser_name', e.target.value)}>
+                                <option value="chrome">Chrome</option>
+                                <option value="edge">Edge</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>SSO Login:</label>
+                            <select onChange={(e) => updateActionFields(index, 'sso_login', e.target.value)}>
+                                <option value="no">No</option>
+                                <option value="yes">Yes</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Browser Zoom:</label>
+                            <input type="text" defaultValue="0.8" onChange={(e) => updateActionFields(index, 'browser_zoom', e.target.value)} />
+                        </div>
+                    </>
+                );
+            case "ui_navigate":
+                return (
+                    <>
+                        <div>
+                            <label>url</label>
+                            <input type="text" placeholder="Web URL starting with http/https" onChange={(e) => updateActionFields(index, 'url', e.target.value)} />
+                        </div>
+                    </>
+                );
+
+            case "ui_input":
+                return (
+                    <>
+                        <div>
+                            <label>Object Name</label>
+                            <input type="text" placeholder="Enter Object Name" onChange={(e) => updateActionFields(index, 'object_name', e.target.value)} />
+                        </div>
+                        <div>
+                            <label>Input Value</label>
+                            <input type="text" placeholder="Enter Input Value" onChange={(e) => updateActionFields(index, 'input_value', e.target.value)} />
+                        </div>
+                    </>
+                );
+
+            default:
+                return null;
+        }
+    };
+
+    const removeTestAction = (index) => {
+        const updatedActions = testActions.filter((_, i) => i !== index);
+        setTestActions(updatedActions);
     };
 
     // Render JSON output
@@ -54,22 +163,18 @@ function TestScriptBuilder() {
             testifact_items: [
                 {
                     ...testCase,
-                    test_actions: [
-                        {
-                            action_name: testAction.action_name,
-                            action_type: testAction.action_type,
-                            action_config: {
-                                browser_name: testAction.browser_name // Assuming you want it nested like this
-                            }
-                        }
-                    ]
+                    test_actions: testActions.map(action => ({
+                        action_name: action.action_name,
+                        action_type: action.action_type,
+                        action_config: action.action_fields // Assuming action_fields contains all the dynamic fields
+                    }))
                 }
             ]
         };
         setFinalJSON(JSON.stringify(combinedJSON, null, 2));
         setShowModal(true); // Show the modal with the JSON
     };
-    
+
 
     const copyToClipboard = () => {
         navigator.clipboard.writeText(finalJSON).then(() => {
@@ -80,95 +185,26 @@ function TestScriptBuilder() {
     return (
         <div className="test-script-builder-container">
             {/* Test Suite Information Row */}
-            <div className="section-row">
-                <div className="input-section">
-                    <h2>Test Suite Info</h2>
-                    <label>
-                        Test Suite Name:
-                        <input type="text" name="testsuite_name" value={testSuite.testsuite_name} onChange={handleTestSuiteChange} />
-                    </label>
-                    <label>
-                        Test Suite Owner:
-                        <input type="text" name="testsuite_owner" value={testSuite.testsuite_owner} onChange={handleTestSuiteChange} />
-                    </label>
-                    <label>
-                        Object Map External:
-                        <input type="text" name="object_map_external" value={testSuite.object_map_external} onChange={handleTestSuiteChange} />
-                    </label>
-                    <label>
-                        Variable Map External:
-                        <input type="text" name="variable_map_external" value={testSuite.variable_map_external} onChange={handleTestSuiteChange} />
-                    </label>
-                </div>
-                <div className="json-output-section">
-                    <h3>Test Suite Info JSON</h3>
-                    {renderJSON({ testifact_info: testSuite })}
-                </div>
-            </div>
-
+            <TestSuiteInfo testSuite={testSuite} handleTestSuiteChange={handleTestSuiteChange} renderJSON={renderJSON} />
             {/* Test Case Information Row */}
-            <div className="section-row">
-                <div className="input-section">
-                    <h2>Test Case 1 Info</h2>
-                    <label>
-                        Test Case Name:
-                        <input type="text" name="test_name" value={testCase.test_name} onChange={handleTestCaseChange} />
-                    </label>
-                    <label>
-                        Description:
-                        <input type="text" name="description" value={testCase.description} onChange={handleTestCaseChange} />
-                    </label>
-                    <label>
-                        Execute:
-                        <select name="execute" value={testCase.execute} onChange={handleTestCaseChange}>
-                            <option value="yes">Yes</option>
-                            <option value="no">No</option>
-                        </select>
-                    </label>
-                </div>
-                <div className="json-output-section">
-                    <h3>Test Case Info JSON</h3>
-                    {renderJSON({ testifact_items: [testCase] })}
-                </div>
-            </div>
+            <TestCaseInfo testCase={testCase} handleTestCaseChange={handleTestCaseChange} renderJSON={renderJSON} />
 
-            {/* Test Action Row */}
-            <div className="section-row">
-                <div className="input-section">
-                    <h2>Test Case 1 - Action 01</h2>
-                    <label>
-                        Action Type:
-                        <select name="action_type" value={testAction.action_type} onChange={handleTestActionChange}>
-                            <option value="">Select Action Type</option>
-                            <option value="ui_interaction">UI Interaction</option>
-                            <option value="api_call">API Call</option>
-                            <option value="data_validation">Data Validation</option>
-                        </select>
-                    </label>
-                    <label>
-                        Action Name:
-                        <select name="action_name" value={testAction.action_name} onChange={handleTestActionChange}>
-                            <option value="">Select Action Name</option>
-                            <option value="click">Click</option>
-                            <option value="enter_text">Enter Text</option>
-                            <option value="submit_form">Submit Form</option>
-                        </select>
-                    </label>
-                    <label>
-                        Browser Name:
-                        <select name="browser_name" value={testAction.browser_name} onChange={handleTestActionChange}>
-                            <option value="">Select Browser</option>
-                            <option value="chrome">Chrome</option>
-                            <option value="firefox">Firefox</option>
-                            <option value="safari">Safari</option>
-                        </select>
-                    </label>
-                </div>
-                <div className="json-output-section">
-                    <h3>Test Case Action JSON</h3>
-                    {renderJSON({ test_actions: [testAction] })}
-                </div>
-            </div>
+            {testActions.map((action, index) => (
+                <TestAction
+                    key={index}
+                    action={action}
+                    index={index}
+                    handleActionTypeChange={handleActionTypeChange}
+                    handleActionNameChange={handleActionNameChange}
+                    updateActionFields={updateActionFields}
+                    removeTestAction={removeTestAction}
+                    renderActionFields={renderActionFields}
+                    renderJSON={renderJSON}
+                />
+            ))}
+            <button onClick={addTestAction} className="add-action-btn">
+                Add Test Action
+            </button>
             <button onClick={generateFinalJSON} className="generate-json-btn">
                 Generate JSON
             </button>
@@ -183,6 +219,7 @@ function TestScriptBuilder() {
                     </div>
                 </div>
             )}
+            <button onClick={resetTestScript}>Reset</button>
         </div>
     );
 }
