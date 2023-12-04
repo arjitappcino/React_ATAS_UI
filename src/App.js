@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import Navbar from './Navbar';
 import TestScriptBuilder from './TestScriptBuilder';
+import ObjectMapBuilder from './ObjectMapBuilder';
+import VariableMapBuilder from './VariableMapBuilder';
+import { AppProvider } from './AppContext';
 // Import other components as needed
 
 function App() {
@@ -15,19 +18,19 @@ function App() {
             case 'test-script':
                 return <TestScriptBuilder />;
             case 'object-map':
-                // return <ObjectMap />;
+                return <ObjectMapBuilder />;
             case 'variable-map':
-                // return <VariableMap />;
+                return <VariableMapBuilder />;
             default:
                 return null; // or <DefaultComponent />
         }
     };
 
     return (
-        <div>
+        <AppProvider>
             <Navbar onTabClick={handleTabClick} activeTab={activeTab} />
             {renderActiveTabContent()}
-        </div>
+        </AppProvider>
     );
 }
 

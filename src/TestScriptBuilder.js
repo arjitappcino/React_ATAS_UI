@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './TestScriptBuilder.css'; // Ensure you have this CSS file for styles
 import TestSuiteInfo from './files/TestSuiteInfo';
 import TestCaseInfo from './files/TestCaseInfo';
@@ -9,6 +9,26 @@ function TestScriptBuilder() {
     const [showModal, setShowModal] = useState(false);
     const [finalJSON, setFinalJSON] = useState('');
     const [testActions, setTestActions] = useState([]);
+    const [testScript, setTestScript] = useState('');
+
+    useEffect(() => {
+        const savedTestScript = sessionStorage.getItem('testScript');
+        if (savedTestScript) {
+            setTestScript(JSON.parse(savedTestScript));
+        }
+    }, []);
+
+    // Save state to sessionStorage when it changes
+    useEffect(() => {
+        sessionStorage.setItem('testScript', JSON.stringify(testScript));
+    }, [testScript]);
+
+    // Reset state and clear sessionStorage
+    const resetTestScript = () => {
+        setTestScript('');
+        sessionStorage.removeItem('testScript');
+    };
+
     // State for the test suite information
     const [testSuite, setTestSuite] = useState({
         testsuite_name: '',
@@ -199,6 +219,7 @@ function TestScriptBuilder() {
                     </div>
                 </div>
             )}
+            <button onClick={resetTestScript}>Reset</button>
         </div>
     );
 }

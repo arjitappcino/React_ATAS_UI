@@ -1,0 +1,23 @@
+.object-form {
+    margin-bottom: 10px;
+}
+
+.object-container {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.json-output {
+    white-space: pre-wrap;
+    border: 2px solid #726f6ffd;
+    padding: 10px;
+}
+
+.input-box {
+    border: 1px solid #ccc;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
