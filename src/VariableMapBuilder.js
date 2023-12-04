@@ -1,17 +1,23 @@
-import React, { useState } from 'react';
-import './VariableMapBuilder.css'; // Ensure your CSS is adapted for React
+import React, { useState, useEffect } from 'react';
+import './VariableMapBuilder.css';
 
 function VariableMapBuilder() {
-    const [variables, setVariables] = useState({});
+    const [variables, setVariables] = useState(() => {
+        const savedVariables = sessionStorage.getItem('variables');
+        return savedVariables ? JSON.parse(savedVariables) : {};
+    });
     const [variableName, setVariableName] = useState('');
     const [variableValue, setVariableValue] = useState('');
+
+    useEffect(() => {
+        sessionStorage.setItem('variables', JSON.stringify(variables));
+    }, [variables]);
 
     const addVariable = () => {
         if (variableName === '' || variableValue === '') {
             alert('Please enter both Variable Name and Variable Value.');
             return;
         }
-
         setVariables({ ...variables, [variableName]: variableValue });
         setVariableName('');
         setVariableValue('');
@@ -48,7 +54,7 @@ function VariableMapBuilder() {
     };
 
     return (
-        <div className="container" style={{marginTop: '50px'}}>
+        <div className="container" style={{ marginTop: '50px' }}>
             <div className="form-container">
                 <div className="variable">
                     <label>Variable Name</label>
@@ -60,28 +66,30 @@ function VariableMapBuilder() {
                 </div>
                 <button className="button-74" onClick={addVariable} style={{ marginTop: '10px', marginLeft: '20px' }}>Add Variable</button>
             </div>
-            <table className="variable-table">
-                <thead>
-                    <tr>
-                        <th>Sr. No.</th>
-                        <th>Variable Name</th>
-                        <th>Variable Value</th>
-                        <th>Edit</th>
-                        <th>Delete</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {Object.entries(variables).map(([name, value], index) => (
-                        <tr key={name}>
-                            <td>{index + 1}</td>
-                            <td>{name}</td>
-                            <td>{value}</td>
-                            <td><button onClick={() => editVariable(name)}>Edit</button></td>
-                            <td><button onClick={() => deleteVariable(name)}>Delete</button></td>
+            {Object.keys(variables).length > 0 && (
+                <table className="variable-table">
+                    <thead>
+                        <tr>
+                            <th>Sr. No.</th>
+                            <th>Variable Name</th>
+                            <th>Variable Value</th>
+                            <th>Edit</th>
+                            <th>Delete</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {Object.entries(variables).map(([name, value], index) => (
+                            <tr key={name}>
+                                <td>{index + 1}</td>
+                                <td>{name}</td>
+                                <td>{value}</td>
+                                <td><button onClick={() => editVariable(name)}>Edit</button></td>
+                                <td><button onClick={() => deleteVariable(name)}>Delete</button></td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            )}
             <div>
                 <pre>{JSON.stringify(variables, null, 2)}</pre>
                 <button className="button-74" onClick={downloadJSON}>Download JSON</button>

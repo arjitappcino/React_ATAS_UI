@@ -6,50 +6,33 @@ import TestAction from './files/TestAction';
 
 function TestScriptBuilder() {
 
-    const [showModal, setShowModal] = useState(false);
-    const [finalJSON, setFinalJSON] = useState('');
-    const [testActions, setTestActions] = useState([]);
-    const [testScript, setTestScript] = useState('');
-
-    useEffect(() => {
-        const savedTestScript = sessionStorage.getItem('testScript');
-        if (savedTestScript) {
-            setTestScript(JSON.parse(savedTestScript));
-        }
-    }, []);
-
-    // Save state to sessionStorage when it changes
-    useEffect(() => {
-        sessionStorage.setItem('testScript', JSON.stringify(testScript));
-    }, [testScript]);
-
-    // Reset state and clear sessionStorage
-    const resetTestScript = () => {
-        setTestScript('');
-        sessionStorage.removeItem('testScript');
-    };
-
-    // State for the test suite information
-    const [testSuite, setTestSuite] = useState({
+    const [testSuite, setTestSuite] = useState(() => JSON.parse(sessionStorage.getItem('testSuite')) || {
         testsuite_name: '',
         testsuite_owner: '',
         object_map_external: '',
         variable_map_external: ''
     });
-
-    // State for the test case information
-    const [testCase, setTestCase] = useState({
+    const [testCase, setTestCase] = useState(() => JSON.parse(sessionStorage.getItem('testCase')) || {
         test_name: '',
         description: '',
-        execute: 'yes' // or 'no'
+        execute: 'yes'
     });
+    const [testActions, setTestActions] = useState(() => JSON.parse(sessionStorage.getItem('testActions')) || [{ 
+        action_type: 'ui', 
+        action_name: 'ui_open_browser', 
+        action_fields: {} 
+    }]);
 
-    // State for the test action information
-    const [testAction, setTestAction] = useState({
-        action_type: '',
-        action_name: '',
-        browser_name: ''
-    });
+
+    const [finalJSON, setFinalJSON] = useState('');
+    const [showModal, setShowModal] = useState(false);
+
+    // Save state to sessionStorage when state changes
+    useEffect(() => {
+        sessionStorage.setItem('testSuite', JSON.stringify(testSuite));
+        sessionStorage.setItem('testCase', JSON.stringify(testCase));
+        sessionStorage.setItem('testActions', JSON.stringify(testActions));
+    }, [testSuite, testCase, testActions]);
 
     // Handlers for input changes
     const handleTestSuiteChange = (e) => {
@@ -91,6 +74,15 @@ function TestScriptBuilder() {
             return action;
         });
         setTestActions(updatedActions);
+    };
+
+    const resetState = () => {
+        setTestSuite({ testsuite_name: '', testsuite_owner: '', object_map_external: '', variable_map_external: '' });
+        setTestCase({ test_name: '', description: '', execute: 'yes' });
+        setTestActions([]);
+        sessionStorage.removeItem('testSuite');
+        sessionStorage.removeItem('testCase');
+        sessionStorage.removeItem('testActions');
     };
 
     const renderActionFields = (action, index) => {
@@ -184,11 +176,8 @@ function TestScriptBuilder() {
 
     return (
         <div className="test-script-builder-container">
-            {/* Test Suite Information Row */}
             <TestSuiteInfo testSuite={testSuite} handleTestSuiteChange={handleTestSuiteChange} renderJSON={renderJSON} />
-            {/* Test Case Information Row */}
             <TestCaseInfo testCase={testCase} handleTestCaseChange={handleTestCaseChange} renderJSON={renderJSON} />
-
             {testActions.map((action, index) => (
                 <TestAction
                     key={index}
@@ -202,24 +191,18 @@ function TestScriptBuilder() {
                     renderJSON={renderJSON}
                 />
             ))}
-            <button onClick={addTestAction} className="add-action-btn">
-                Add Test Action
-            </button>
-            <button onClick={generateFinalJSON} className="generate-json-btn">
-                Generate JSON
-            </button>
+            <button onClick={addTestAction} className="add-action-btn">Add Test Action</button>
+            <button onClick={generateFinalJSON} className="generate-json-btn">Generate JSON</button>
+            <button onClick={resetState} className="reset-btn">Reset</button>
             {showModal && (
                 <div className="modal">
                     <div className="modal-content">
                         <span className="close" onClick={() => setShowModal(false)}>&times;</span>
                         <pre>{finalJSON}</pre>
-                        <button onClick={copyToClipboard} className="copy-json-btn">
-                            Copy JSON
-                        </button>
+                        <button onClick={copyToClipboard} className="copy-json-btn">Copy JSON</button>
                     </div>
                 </div>
             )}
-            <button onClick={resetTestScript}>Reset</button>
         </div>
     );
 }
