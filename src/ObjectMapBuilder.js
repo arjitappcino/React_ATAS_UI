@@ -1,15 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './ObjectMapBuilder.css'; // Ensure your CSS is adapted for React
 
 const locatorNames = ['Select Locator Type', 'ID', 'Name', 'ClassName', 'LinkText', 'Partial LinkText', 'TagName', 'CssSelector', 'XPath'];
 const xpathTypes = ['Select XPath Type', 'using attribute', 'using text', 'using contains', 'using starts-with', 'using multiple attributes', 'using index', 'custom'];
 
 function ObjectMapBuilder() {
-    const [objectsData, setObjectsData] = useState([]);
+    const [objectsData, setObjectsData] = useState(() => JSON.parse(sessionStorage.getItem('objectsData')) || []);
     const [objectName, setObjectName] = useState('');
     const [locatorName, setLocatorName] = useState(locatorNames[0]);
-    const [xpathType, setXpathType] = useState(xpathTypes[0]);
     const [locatorValue, setLocatorValue] = useState('');
+    const [xpathType, setXpathType] = useState(xpathTypes[0]);
+
+    // Save state to sessionStorage when state changes
+    useEffect(() => {
+        sessionStorage.setItem('objectsData', JSON.stringify(objectsData));
+    }, [objectsData]);
 
     const addObject = () => {
         if (!objectName || locatorName === locatorNames[0] || !locatorValue) {
@@ -36,7 +41,18 @@ function ObjectMapBuilder() {
     const clearInputs = () => {
         setObjectName('');
         setLocatorName(locatorNames[0]);
+        setXpathType(xpathTypes[0]);
         setLocatorValue('');
+    };
+
+    const handleLocatorNameChange = (name) => {
+        setLocatorName(name);
+        if (name === 'XPath') {
+            setXpathType(xpathTypes[1]); // default to first XPath type
+        } else {
+            setXpathType(xpathTypes[0]);
+            setLocatorValue('');
+        }
     };
 
     const downloadJSON = () => {
@@ -81,6 +97,14 @@ function ObjectMapBuilder() {
             .catch(err => console.error('Error copying JSON: ', err));
     };
 
+    const resetState = () => {
+        setObjectsData([]);
+        setObjectName('');
+        setLocatorName(locatorNames[0]);
+        setLocatorValue('');
+        sessionStorage.removeItem('objectsData');
+    };
+
     return (
         <div className="object-map-builder" style={{ marginTop: '55px' }}>
             <div className="input-box">
@@ -123,6 +147,7 @@ function ObjectMapBuilder() {
                 )}</div>
                 <button onClick={downloadJSON} className="button-74">Download JSON</button>
                 <button onClick={copyJSON} className="button-74">Copy JSON</button>
+                <button onClick={resetState} className="button-74">Reset</button>
             </div>
         </div>
     );
