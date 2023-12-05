@@ -1,0 +1,51 @@
+.welcome-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #4A154B; /* Slack's dark purple background */
+    color: white;
+    padding: 0 20px;
+    text-align: center;
+  }
+  
+  .welcome-content {
+    max-width: 600px;
+  }
+  
+  .welcome-buttons {
+    margin-top: 30px;
+  }
+  
+  .welcome-button {
+    padding: 10px 20px;
+    margin: 0 10px;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .new-script {
+    background-color: white;
+    color: #4A154B;
+  }
+  
+  .new-script:hover {
+    background-color: #e8e8e8;
+  }
+  
+  .existing-script {
+    background-color: transparent;
+    color: white;
+    border: 1px solid white;
+  }
+  
+  .existing-script:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  
+  
