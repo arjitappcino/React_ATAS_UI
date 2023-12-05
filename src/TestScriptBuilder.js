@@ -210,7 +210,7 @@ function TestScriptBuilder() {
                             <button onClick={() => showVariableSuggestions(index, 'url')}>Show Variables</button>
                         </div>
                         <div>
-                            {showSuggestions && (
+                            {index === activeInputField.actionIndex && activeInputField.fieldName === 'url' && showSuggestions && (
                                 <div className="suggestions-dropdown">
                                     {variableSuggestions.map(suggestion => (
                                         <div key={suggestion} className="suggestion-item"
@@ -229,15 +229,15 @@ function TestScriptBuilder() {
                     <>
                         <div>
                             <label>Object Name</label>
-                            <input type="text" placeholder="Enter Object Name" value={action.action_fields.object_name || ''}  onChange={(e) => updateActionFields(index, 'object_name', e.target.value)} />
+                            <input type="text" placeholder="Enter Object Name" value={action.action_fields.object_name || ''} onChange={(e) => updateActionFields(index, 'object_name', e.target.value)} />
                             <button onClick={() => showObjectSuggestions(index, 'object_name')}>Show Objects</button>
                         </div>
                         <div>
-                            {showSuggestions && (
+                            {index === activeInputField.actionIndex && activeInputField.fieldName === 'object_name' && showSuggestions && (
                                 <div className="suggestions-dropdown" ref={dropdownRef}>
                                     {objectSuggestions.map(suggestion => (
                                         <div key={suggestion} className="suggestion-item"
-                                             onClick={() => handleObjectSuggestionClick(suggestion)}>
+                                            onClick={() => handleObjectSuggestionClick(suggestion)}>
                                             {suggestion}
                                         </div>
                                     ))}
@@ -246,11 +246,11 @@ function TestScriptBuilder() {
                         </div>
                         <div>
                             <label>Input Value</label>
-                            <input type="text" placeholder="Enter Input Value" value={action.action_fields.url || ''} onChange={(e) => updateActionFields(index, 'input_value', e.target.value)} />
-                            <button onClick={() => showVariableSuggestions(index, 'url')}>Show Variables</button>
+                            <input type="text" placeholder="Enter Input Value" value={action.action_fields.input_value || ''} onChange={(e) => updateActionFields(index, 'input_value', e.target.value)} />
+                            <button onClick={() => showVariableSuggestions(index, 'input_value')}>Show Variables</button>
                         </div>
                         <div>
-                            {showSuggestions && (
+                            {index === activeInputField.actionIndex && activeInputField.fieldName === 'input_value' && showSuggestions && (
                                 <div className="suggestions-dropdown">
                                     {variableSuggestions.map(suggestion => (
                                         <div key={suggestion} className="suggestion-item"
