@@ -14,6 +14,7 @@ function ObjectMapBuilder() {
     // Save state to sessionStorage when state changes
     useEffect(() => {
         sessionStorage.setItem('objectsData', JSON.stringify(objectsData));
+        // console.log("objectData: "+JSON.stringify(objectsData));
     }, [objectsData]);
 
     const addObject = () => {

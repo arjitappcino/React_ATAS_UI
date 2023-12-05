@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './TestScriptBuilder.css'; // Ensure you have this CSS file for styles
 import TestSuiteInfo from './files/TestSuiteInfo';
 import TestCaseInfo from './files/TestCaseInfo';
@@ -6,6 +6,15 @@ import TestAction from './files/TestAction';
 
 function TestScriptBuilder() {
 
+    const [variableSuggestions, setVariableSuggestions] = useState([]);
+    const [objectSuggestions, setObjectSuggestions] = useState([]);
+    const [variableMapData, setVariableMapData] = useState({});
+    const [objectMapData, setObjectMapData] = useState([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [activeInputField, setActiveInputField] = useState({ actionIndex: null, fieldName: null });
+    const [finalJSON, setFinalJSON] = useState('');
+    const [showModal, setShowModal] = useState(false);
+    const dropdownRef = useRef(null);
     const [testSuite, setTestSuite] = useState(() => JSON.parse(sessionStorage.getItem('testSuite')) || {
         testsuite_name: '',
         testsuite_owner: '',
@@ -17,22 +26,104 @@ function TestScriptBuilder() {
         description: '',
         execute: 'yes'
     });
-    const [testActions, setTestActions] = useState(() => JSON.parse(sessionStorage.getItem('testActions')) || [{ 
-        action_type: 'ui', 
-        action_name: 'ui_open_browser', 
-        action_fields: {} 
+    const [testActions, setTestActions] = useState(() => JSON.parse(sessionStorage.getItem('testActions')) || [{
+        action_type: 'ui',
+        action_name: 'ui_open_browser',
+        action_fields: {}
     }]);
 
-
-    const [finalJSON, setFinalJSON] = useState('');
-    const [showModal, setShowModal] = useState(false);
-
-    // Save state to sessionStorage when state changes
     useEffect(() => {
         sessionStorage.setItem('testSuite', JSON.stringify(testSuite));
         sessionStorage.setItem('testCase', JSON.stringify(testCase));
         sessionStorage.setItem('testActions', JSON.stringify(testActions));
     }, [testSuite, testCase, testActions]);
+
+    useEffect(() => {
+        // Fetch object map data along with variable map data
+        const fetchedVariableMapData = JSON.parse(sessionStorage.getItem('variables')) || {};
+        const fetchedObjectMapData = JSON.parse(sessionStorage.getItem('objectsData')) || [];
+        setVariableMapData(fetchedVariableMapData);
+        setObjectMapData(fetchedObjectMapData);
+    }, []);
+
+    useEffect(() => {
+        // Handler to close the dropdown if clicked outside
+        function handleClickOutside(event) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setShowSuggestions(false);
+            }
+        }
+
+        // Bind the event listener
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            // Unbind the event listener on clean up
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [dropdownRef]);
+
+    const showVariableSuggestions = (index, fieldName) => {
+        if (activeInputField.actionIndex !== index || activeInputField.fieldName !== fieldName || !showSuggestions) {
+            setActiveInputField({ actionIndex: index, fieldName });
+            setVariableSuggestions(Object.keys(variableMapData));
+            setShowSuggestions(true);
+        } else {
+            setShowSuggestions(false);
+        }
+    };
+
+    const showObjectSuggestions = (index, fieldName) => {
+        if (activeInputField.actionIndex !== index || activeInputField.fieldName !== fieldName || !showSuggestions) {
+            setActiveInputField({ actionIndex: index, fieldName });
+            setObjectSuggestions(objectMapData.map(obj => obj.objectName));
+            setVariableSuggestions([]);
+            setShowSuggestions(true);
+        } else {
+            setShowSuggestions(false);
+        }
+    };
+
+    const handleVariableSuggestionClick = (suggestion) => {
+        if (activeInputField.actionIndex !== null && activeInputField.fieldName !== null) {
+            applySuggestion(`[VM|${suggestion}]`, activeInputField.actionIndex, activeInputField.fieldName);
+        }
+    };
+
+    const handleObjectSuggestionClick = (suggestion) => {
+        if (activeInputField.actionIndex !== null && activeInputField.fieldName !== null) {
+            applySuggestion(suggestion, activeInputField.actionIndex, activeInputField.fieldName);
+        }
+    };
+
+    const applySuggestion = (suggestion, index, fieldName) => {
+        const updatedActions = testActions.map((action, actionIndex) => {
+            if (actionIndex === index) {
+                return {
+                    ...action,
+                    action_fields: { ...action.action_fields, [fieldName]: suggestion }
+                };
+            }
+            return action;
+        });
+        setTestActions(updatedActions);
+        setShowSuggestions(false);
+    };
+
+    const handleInputChange = (index, fieldName, event) => {
+        const value = event.target.value;
+        setActiveInputField({ actionIndex: index, fieldName });
+        updateActionFields(index, fieldName, value);
+
+        if (value.startsWith("[VM|")) {
+            // Show variable suggestions
+            const searchValue = value.slice(4);
+            const filteredVariables = Object.keys(variableMapData)
+                .filter(key => key.toLowerCase().includes(searchValue.toLowerCase()));
+            setVariableSuggestions(filteredVariables);
+            setObjectSuggestions([]);
+            setShowSuggestions(true);
+        }
+    };
 
     // Handlers for input changes
     const handleTestSuiteChange = (e) => {
@@ -115,7 +206,20 @@ function TestScriptBuilder() {
                     <>
                         <div>
                             <label>url</label>
-                            <input type="text" placeholder="Web URL starting with http/https" onChange={(e) => updateActionFields(index, 'url', e.target.value)} />
+                            <input type="text" placeholder="Web URL starting with http/https" value={action.action_fields.url || ''} onChange={(e) => handleInputChange(index, 'url', e)} />
+                            <button onClick={() => showVariableSuggestions(index, 'url')}>Show Variables</button>
+                        </div>
+                        <div>
+                            {showSuggestions && (
+                                <div className="suggestions-dropdown">
+                                    {variableSuggestions.map(suggestion => (
+                                        <div key={suggestion} className="suggestion-item"
+                                            onClick={() => handleVariableSuggestionClick(suggestion)}>
+                                            {suggestion}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </>
                 );
@@ -125,11 +229,37 @@ function TestScriptBuilder() {
                     <>
                         <div>
                             <label>Object Name</label>
-                            <input type="text" placeholder="Enter Object Name" onChange={(e) => updateActionFields(index, 'object_name', e.target.value)} />
+                            <input type="text" placeholder="Enter Object Name" value={action.action_fields.object_name || ''}  onChange={(e) => updateActionFields(index, 'object_name', e.target.value)} />
+                            <button onClick={() => showObjectSuggestions(index, 'object_name')}>Show Objects</button>
+                        </div>
+                        <div>
+                            {showSuggestions && (
+                                <div className="suggestions-dropdown" ref={dropdownRef}>
+                                    {objectSuggestions.map(suggestion => (
+                                        <div key={suggestion} className="suggestion-item"
+                                             onClick={() => handleObjectSuggestionClick(suggestion)}>
+                                            {suggestion}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                         <div>
                             <label>Input Value</label>
-                            <input type="text" placeholder="Enter Input Value" onChange={(e) => updateActionFields(index, 'input_value', e.target.value)} />
+                            <input type="text" placeholder="Enter Input Value" value={action.action_fields.url || ''} onChange={(e) => updateActionFields(index, 'input_value', e.target.value)} />
+                            <button onClick={() => showVariableSuggestions(index, 'url')}>Show Variables</button>
+                        </div>
+                        <div>
+                            {showSuggestions && (
+                                <div className="suggestions-dropdown">
+                                    {variableSuggestions.map(suggestion => (
+                                        <div key={suggestion} className="suggestion-item"
+                                            onClick={() => handleVariableSuggestionClick(suggestion)}>
+                                            {suggestion}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </>
                 );

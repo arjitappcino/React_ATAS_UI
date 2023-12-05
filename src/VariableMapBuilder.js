@@ -11,6 +11,7 @@ function VariableMapBuilder() {
 
     useEffect(() => {
         sessionStorage.setItem('variables', JSON.stringify(variables));
+        // console.log("variableObjects: "+JSON.stringify(variables));
     }, [variables]);
 
     const addVariable = () => {
