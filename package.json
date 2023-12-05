@@ -1,5 +1,6 @@
 {
   "name": "script-builder",
+  "homepage" :"https://atas.thetechsmith.com",
   "version": "0.1.0",
   "private": true,
   "dependencies": {

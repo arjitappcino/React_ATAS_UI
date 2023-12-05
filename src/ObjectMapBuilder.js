@@ -10,6 +10,8 @@ function ObjectMapBuilder() {
     const [locatorName, setLocatorName] = useState(locatorNames[0]);
     const [locatorValue, setLocatorValue] = useState('');
     const [xpathType, setXpathType] = useState(xpathTypes[0]);
+    const [xpathStatement, setXpathStatement] = useState('');
+    const [showXpathTypeDropdown, setShowXpathTypeDropdown] = useState(false); // State to show/hide the XPath type dropdown
 
     // Save state to sessionStorage when state changes
     useEffect(() => {
@@ -46,13 +48,37 @@ function ObjectMapBuilder() {
         setLocatorValue('');
     };
 
-    const handleLocatorNameChange = (name) => {
-        setLocatorName(name);
-        if (name === 'XPath') {
-            setXpathType(xpathTypes[1]); // default to first XPath type
+    const handleLocatorNameChange = (event) => {
+        const selectedLocatorName = event.target.value;
+        setLocatorName(selectedLocatorName);
+        if (selectedLocatorName === 'XPath') {
+            setShowXpathTypeDropdown(true); // Show XPath dropdown
         } else {
-            setXpathType(xpathTypes[0]);
-            setLocatorValue('');
+            setShowXpathTypeDropdown(false); // Hide XPath dropdown
+            setXpathType(xpathTypes[0]); // Reset XPath type
+            setXpathStatement(''); // Reset XPath statement
+        }
+    };
+
+    const handleXpathTypeChange = (event) => {
+        const selectedXpathType = event.target.value;
+        setXpathType(selectedXpathType);
+        const generatedXpath = generateXpathStatement(selectedXpathType); // Generate XPath statement
+        setXpathStatement(generatedXpath);
+        setLocatorValue(generatedXpath); // Set locator value to generated XPath
+    };
+
+    // Function to generate XPath statement based on type
+    const generateXpathStatement = (xpathType) => {
+        // Replace with your XPath generation logic
+        switch (xpathType) {
+            case 'using attribute':
+                return "//element[@attribute='value']";
+            case 'using text':
+                return "//element[text()='some text']";
+            // Add more cases as needed
+            default:
+                return '';
         }
     };
 
@@ -115,13 +141,21 @@ function ObjectMapBuilder() {
                 </div>
                 <div className="object-form">
                     <label>Locator Name <span style={{ color: 'red' }}>*</span></label>
-                    <select value={locatorName} onChange={(e) => setLocatorName(e.target.value)}>
+                    <select value={locatorName} onChange={handleLocatorNameChange}>
                         {locatorNames.map(name => <option key={name} value={name}>{name}</option>)}
                     </select>
                 </div>
+                {showXpathTypeDropdown && (
+                    <div className="object-form">
+                        <label>XPath Type <span style={{ color: 'red' }}>*</span></label>
+                        <select value={xpathType} onChange={handleXpathTypeChange}>
+                            {xpathTypes.map(type => <option key={type} value={type}>{type}</option>)}
+                        </select>
+                    </div>
+                )}
                 <div className="object-form">
                     <label>Locator Value <span style={{ color: 'red' }}>*</span></label>
-                    <input type="text" value={locatorValue} onChange={(e) => setLocatorValue(e.target.value)} />
+                    <input type="text" value={locatorValue} onChange={(e) => setLocatorValue(e.target.value)} placeholder="Generated XPath or enter manually" />
                 </div>
                 <button onClick={addObject} className="button-74">Add Object</button>
                 <div className="object-container">
