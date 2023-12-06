@@ -10,6 +10,8 @@ function WelcomePage({ onNewClick }) {
     const [hasObjectMap, setHasObjectMap] = useState(false); // New state for object map
     const [objectMapFile, setObjectMapFile] = useState(null);
     const [objectMapUploaded, setObjectMapUploaded] = useState(false);
+    const [variableMapError, setVariableMapError] = useState(false);
+    const [objectMapError, setObjectMapError] = useState(false);
 
 
     const handleNewClick = () => {
@@ -35,6 +37,20 @@ function WelcomePage({ onNewClick }) {
     };
 
     const startScripting = () => {
+        setVariableMapError(false);
+        setObjectMapError(false);
+        // Check for files only if the corresponding "Yes" was selected
+        if (hasVariableMap && !variableMapFile) {
+            if (hasObjectMap && !objectMapFile) {
+                setObjectMapError(true); // Set error state for object map
+            }
+            setVariableMapError(true); // Set error state for variable map
+            return; // Stop the function from proceeding further
+        }
+        if (hasObjectMap && !objectMapFile) {
+            setObjectMapError(true); // Set error state for object map
+            return; // Stop the function from proceeding further
+        }
         setShowModal(false);
         // Pass both the variable map and object map files to parent for processing
         onNewClick(variableMapFile, objectMapFile);
@@ -48,6 +64,18 @@ function WelcomePage({ onNewClick }) {
             setObjectMapFile(null);
             setObjectMapUploaded(false);
         }
+    };
+
+    const closeModal = () => {
+        // Reset the error messages when closing the modal
+        setVariableMapError(false);
+        setObjectMapError(false);
+        setHasVariableMap(false);
+        resetFileSelection('variable');
+        setHasObjectMap(false);
+        resetFileSelection('object');
+        // Close the modal
+        setShowModal(false);
     };
 
     return (
@@ -64,7 +92,7 @@ function WelcomePage({ onNewClick }) {
             {showModal && (
                 <div className="modal">
                     <div className="modal-content">
-                        <span className="close" onClick={() => setShowModal(false)}>&times;</span>
+                        <span className="close" onClick={closeModal}>&times;</span>
                         <h2>Start New Script</h2>
                         <div className="radio-options-container">
                             <div className="radio-group">
@@ -98,6 +126,9 @@ function WelcomePage({ onNewClick }) {
                                         {variableMapUploaded && <img src={checkmark} alt="Uploaded" />}
                                     </div>
                                 )}
+                                {hasVariableMap && variableMapError && (
+                                    <p className="error-message">Please upload the Variable Map file.</p>
+                                )}
                             </div>
                             <div className="radio-group">
                                 <label>Existing Object Map?&nbsp;&nbsp;</label>
@@ -116,7 +147,7 @@ function WelcomePage({ onNewClick }) {
                                         defaultChecked
                                         onChange={() => {
                                             setHasObjectMap(false);
-                                            resetFileSelection('object'); 
+                                            resetFileSelection('object');
                                         }}
                                     />
                                     No
@@ -127,8 +158,11 @@ function WelcomePage({ onNewClick }) {
                                             type="file"
                                             onChange={handleObjectMapChange}
                                         />
-                                         {objectMapUploaded && <img src={checkmark} alt="Uploaded" />}
+                                        {objectMapUploaded && <img src={checkmark} alt="Uploaded" />}
                                     </div>
+                                )}
+                                {hasObjectMap && objectMapError && (
+                                    <p className="error-message">Please upload the Object Map file.</p>
                                 )}
                             </div>
                         </div>
