@@ -1,13 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import './VariableMapBuilder.css';
 
-function VariableMapBuilder() {
+function VariableMapBuilder({ variableMapFile }) {
     const [variables, setVariables] = useState(() => {
         const savedVariables = sessionStorage.getItem('variables');
         return savedVariables ? JSON.parse(savedVariables) : {};
     });
     const [variableName, setVariableName] = useState('');
     const [variableValue, setVariableValue] = useState('');
+
+    useEffect(() => {
+        if (variableMapFile) {
+            console.log("Processing uploaded variable map file in VariableMapBuilder");
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const fileContent = JSON.parse(e.target.result);
+                    console.log("Loaded data from variable map file:", fileContent);
+                    setVariables(fileContent);
+                } catch (error) {
+                    console.error("Error parsing variable map file:", error);
+                    alert("Failed to parse the uploaded file. Please ensure it's a valid JSON.");
+                }
+            };
+            reader.readAsText(variableMapFile);
+        }
+    }, [variableMapFile]);
 
     useEffect(() => {
         sessionStorage.setItem('variables', JSON.stringify(variables));

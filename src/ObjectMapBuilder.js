@@ -4,7 +4,7 @@ import './ObjectMapBuilder.css'; // Ensure your CSS is adapted for React
 const locatorNames = ['Select Locator Type', 'ID', 'Name', 'ClassName', 'LinkText', 'Partial LinkText', 'TagName', 'CssSelector', 'XPath'];
 const xpathTypes = ['Select XPath Type', 'using attribute', 'using text', 'using contains', 'using starts-with', 'using multiple attributes', 'using index', 'custom'];
 
-function ObjectMapBuilder() {
+function ObjectMapBuilder({objectMapFile}) {
     const [objectsData, setObjectsData] = useState(() => JSON.parse(sessionStorage.getItem('objectsData')) || []);
     const [objectName, setObjectName] = useState('');
     const [locatorName, setLocatorName] = useState(locatorNames[0]);
@@ -13,6 +13,29 @@ function ObjectMapBuilder() {
     const [xpathStatement, setXpathStatement] = useState('');
     const [showXpathTypeDropdown, setShowXpathTypeDropdown] = useState(false); // State to show/hide the XPath type dropdown
 
+
+    useEffect(() => {
+        if (objectMapFile) {
+            console.log("Processing uploaded object map file in ObjectMapBuilder");
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const fileContent = JSON.parse(e.target.result);
+                    console.log("Loaded data from object map file:", fileContent);
+                    setObjectsData(Object.entries(fileContent).map(([name, details]) => ({
+                        objectName: name,
+                        locatorName: details.locator_name,
+                        locatorValue: details.locator_value
+                    })));
+                } catch (error) {
+                    console.error("Error parsing object map file:", error);
+                    alert("Failed to parse the uploaded file. Please ensure it's a valid JSON.");
+                }
+            };
+            reader.readAsText(objectMapFile);
+        }
+    }, [objectMapFile]);
+    
     // Save state to sessionStorage when state changes
     useEffect(() => {
         sessionStorage.setItem('objectsData', JSON.stringify(objectsData));
