@@ -5,47 +5,48 @@ import ObjectMapBuilder from './ObjectMapBuilder';
 import VariableMapBuilder from './VariableMapBuilder';
 import WelcomePage from './WelcomePage'; // Make sure to create this component
 import { AppProvider } from './AppContext';
-// Import other components as needed
 
 function App() {
-
     const [activeTab, setActiveTab] = useState(() => sessionStorage.getItem('activeTab') || null);
+    const [variableMapFile, setVariableMapFile] = useState(null);
+    const [objectMapFile, setObjectMapFile] = useState(null); // New state for object map file
 
     useEffect(() => {
-        // Update sessionStorage when activeTab changes
         sessionStorage.setItem('activeTab', activeTab);
     }, [activeTab]);
 
     const handleBackClick = () => {
-        // Clear the active tab from the session and reset the state
-        // sessionStorage.removeItem('activeTab');
         sessionStorage.clear();
         setActiveTab(null);
+        setVariableMapFile(null);
+        setObjectMapFile(null);
     };
 
     const handleTabClick = (tabName) => {
         setActiveTab(tabName);
     };
 
-    const handleNewClick = () => {
+    const handleNewClick = (variableFile, objectFile) => {
+        console.log("Received variable map file in App:", variableFile);
+        console.log("Received object map file in App:", objectFile);
         setActiveTab('test-script');
+        setVariableMapFile(variableFile); // Set the uploaded variable map file
+        setObjectMapFile(objectFile); // Set the uploaded object map file
     };
 
     const renderActiveTabContent = () => {
         if (activeTab === null) {
-            // If no tab is active, show the welcome page
             return <WelcomePage onNewClick={handleNewClick} />;
         } else {
-            // Once a tab is active, show the corresponding component
             switch (activeTab) {
                 case 'test-script':
                     return <TestScriptBuilder />;
                 case 'object-map':
-                    return <ObjectMapBuilder />;
+                    return <ObjectMapBuilder objectMapFile={objectMapFile}/>; // Pass object map file to ObjectMapBuilder
                 case 'variable-map':
-                    return <VariableMapBuilder />;
+                    return <VariableMapBuilder variableMapFile={variableMapFile}/>; // Pass variable map file to VariableMapBuilder
                 default:
-                    return null; // or <DefaultComponent />
+                    return null;
             }
         }
     };
