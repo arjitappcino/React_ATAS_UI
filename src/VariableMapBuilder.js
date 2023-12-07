@@ -8,12 +8,13 @@ function VariableMapBuilder({ variableMapFile }) {
     });
     const [variableName, setVariableName] = useState('');
     const [variableValue, setVariableValue] = useState('');
+    const [showJson, setShowJson] = useState(false);
 
     useEffect(() => {
         if (variableMapFile) {
             console.log("Processing uploaded variable map file in VariableMapBuilder");
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 try {
                     const fileContent = JSON.parse(e.target.result);
                     console.log("Loaded data from variable map file:", fileContent);
@@ -31,6 +32,10 @@ function VariableMapBuilder({ variableMapFile }) {
         sessionStorage.setItem('variables', JSON.stringify(variables));
         // console.log("variableObjects: "+JSON.stringify(variables));
     }, [variables]);
+
+    const toggleShowJson = () => {
+        setShowJson(!showJson);
+    };
 
     const addVariable = () => {
         if (variableName === '' || variableValue === '') {
@@ -79,11 +84,11 @@ function VariableMapBuilder({ variableMapFile }) {
                     <label>Variable Name</label>
                     <input type="text" value={variableName} onChange={(e) => setVariableName(e.target.value)} />
                 </div>
-                <div className="variable" style={{ marginLeft: '20px' }}>
+                <div className="variable">
                     <label>Variable Value</label>
-                    <input type="text" value={variableValue} onChange={(e) => setVariableValue(e.target.value)} />
+                    <input type="text" style={{ marginLeft: '4px' }} value={variableValue} onChange={(e) => setVariableValue(e.target.value)} />
                 </div>
-                <button className="button-74" onClick={addVariable} style={{ marginTop: '10px', marginLeft: '20px' }}>Add Variable</button>
+                <button className="button-74" onClick={addVariable}>Add Variable</button>
             </div>
             {Object.keys(variables).length > 0 && (
                 <table className="variable-table">
@@ -109,10 +114,15 @@ function VariableMapBuilder({ variableMapFile }) {
                     </tbody>
                 </table>
             )}
-            <div>
-                <pre>{JSON.stringify(variables, null, 2)}</pre>
+            {showJson && (
+                    <pre>{JSON.stringify(variables, null, 2)}</pre>
+                )}
+            <div className='button-container'>
+                <button onClick={toggleShowJson} className="button-74">
+                    {showJson ? "Hide JSON" : "Show JSON"}
+                </button>
                 <button className="button-74" onClick={downloadJSON}>Download JSON</button>
-                <button className="button-74" onClick={copyJSON} style={{ marginLeft: '10px' }}>Copy JSON</button>
+                <button className="button-74" onClick={copyJSON}>Copy JSON</button>
             </div>
         </div>
     );

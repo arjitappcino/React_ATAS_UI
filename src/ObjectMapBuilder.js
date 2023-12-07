@@ -4,7 +4,7 @@ import './ObjectMapBuilder.css'; // Ensure your CSS is adapted for React
 const locatorNames = ['Select Locator Type', 'ID', 'Name', 'ClassName', 'LinkText', 'Partial LinkText', 'TagName', 'CssSelector', 'XPath'];
 const xpathTypes = ['Select XPath Type', 'using attribute', 'using text', 'using contains', 'using starts-with', 'using multiple attributes', 'using index', 'custom'];
 
-function ObjectMapBuilder({objectMapFile}) {
+function ObjectMapBuilder({ objectMapFile }) {
     const [objectsData, setObjectsData] = useState(() => JSON.parse(sessionStorage.getItem('objectsData')) || []);
     const [objectName, setObjectName] = useState('');
     const [locatorName, setLocatorName] = useState(locatorNames[0]);
@@ -12,13 +12,15 @@ function ObjectMapBuilder({objectMapFile}) {
     const [xpathType, setXpathType] = useState(xpathTypes[0]);
     const [xpathStatement, setXpathStatement] = useState('');
     const [showXpathTypeDropdown, setShowXpathTypeDropdown] = useState(false); // State to show/hide the XPath type dropdown
+    const [editIndex, setEditIndex] = useState(null);
+    const [showJson, setShowJson] = useState(false);
 
 
     useEffect(() => {
         if (objectMapFile) {
             console.log("Processing uploaded object map file in ObjectMapBuilder");
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 try {
                     const fileContent = JSON.parse(e.target.result);
                     console.log("Loaded data from object map file:", fileContent);
@@ -35,12 +37,16 @@ function ObjectMapBuilder({objectMapFile}) {
             reader.readAsText(objectMapFile);
         }
     }, [objectMapFile]);
-    
+
     // Save state to sessionStorage when state changes
     useEffect(() => {
         sessionStorage.setItem('objectsData', JSON.stringify(objectsData));
         // console.log("objectData: "+JSON.stringify(objectsData));
     }, [objectsData]);
+
+    const toggleShowJson = () => {
+        setShowJson(!showJson);
+    };
 
     const addObject = () => {
         if (!objectName || locatorName === locatorNames[0] || !locatorValue) {
@@ -48,8 +54,18 @@ function ObjectMapBuilder({objectMapFile}) {
             return;
         }
 
-        const newObject = { objectName, locatorName, locatorValue };
-        setObjectsData([...objectsData, newObject]);
+        if (editIndex !== null) {
+            // Update existing object
+            const updatedObjectsData = objectsData.map((item, index) =>
+                index === editIndex ? { objectName, locatorName, locatorValue } : item
+            );
+            setObjectsData(updatedObjectsData);
+            setEditIndex(null); // Reset editIndex
+        } else {
+            // Add new object
+            const newObject = { objectName, locatorName, locatorValue };
+            setObjectsData([...objectsData, newObject]);
+        }
         clearInputs();
     };
 
@@ -58,6 +74,7 @@ function ObjectMapBuilder({objectMapFile}) {
         setObjectName(object.objectName);
         setLocatorName(object.locatorName);
         setLocatorValue(object.locatorValue);
+        setEditIndex(index); // Set editIndex to the index of the object being edited
     };
 
     const deleteObject = (index) => {
@@ -181,31 +198,58 @@ function ObjectMapBuilder({objectMapFile}) {
                     <input type="text" value={locatorValue} onChange={(e) => setLocatorValue(e.target.value)} placeholder="Generated XPath or enter manually" />
                 </div>
                 <button onClick={addObject} className="button-74">Add Object</button>
-                <div className="object-container">
-                    {objectsData.map((object, index) => (
-                        <div key={index} className="object-item">
-                            <div><strong>Object {index + 1}:</strong> {object.objectName}</div>
-                            <div><strong>Locator Name:</strong> {object.locatorName}</div>
-                            <div><strong>Locator Value:</strong> {object.locatorValue}</div>
-                            <button onClick={() => editObject(index)} className="button-74">Edit</button>
-                            <button onClick={() => deleteObject(index)} className="button-74">Delete</button>
-                        </div>
-                    ))}
+                {objectsData.length > 0 && (
+                    <table className="object-table">
+                        <thead>
+                            <tr>
+                                <th>Sr. No.</th>
+                                <th>Object Name</th>
+                                <th>Locator Name</th>
+                                <th>Locator Value</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {objectsData.map((object, index) => (
+                                <tr key={index}>
+                                    <td>{index + 1}</td>
+                                    <td>{object.objectName}</td>
+                                    <td>{object.locatorName}</td>
+                                    <td>{object.locatorValue}</td>
+                                    <td>
+                                        <button style={{ marginRight: '10px' }} onClick={() => editObject(index)}>Edit</button>
+                                        <button onClick={() => deleteObject(index)}>Delete</button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+                {showJson && (
+                    <div className="json-output">
+                        {JSON.stringify(
+                            objectsData.reduce((result, object) => {
+                                result[object.objectName] = {
+                                    locator_name: object.locatorName,
+                                    locator_value: object.locatorValue,
+                                };
+                                return result;
+                            }, {}),
+                            null,
+                            2
+                        )}
+                    </div>
+                )}
+
+                {/* Container for the other buttons */}
+                <div className="button-container">
+                    <button onClick={toggleShowJson} className="button-74">
+                        {showJson ? "Hide JSON" : "Show JSON"}
+                    </button>
+                    <button onClick={downloadJSON} className="button-74">Download JSON</button>
+                    <button onClick={copyJSON} className="button-74">Copy JSON</button>
+                    <button onClick={resetState} className="button-74">Reset</button>
                 </div>
-                <div className="json-output">{JSON.stringify(
-                    objectsData.reduce((result, object) => {
-                        result[object.objectName] = {
-                            locator_name: object.locatorName,
-                            locator_value: object.locatorValue,
-                        };
-                        return result;
-                    }, {}),
-                    null,
-                    2
-                )}</div>
-                <button onClick={downloadJSON} className="button-74">Download JSON</button>
-                <button onClick={copyJSON} className="button-74">Copy JSON</button>
-                <button onClick={resetState} className="button-74">Reset</button>
             </div>
         </div>
     );

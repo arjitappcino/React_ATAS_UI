@@ -15,6 +15,7 @@ function TestScriptBuilder() {
     const [finalJSON, setFinalJSON] = useState('');
     const [showModal, setShowModal] = useState(false);
     const dropdownRef = useRef(null);
+    const [objectSearchTerm, setObjectSearchTerm] = useState('');
     const [testSuite, setTestSuite] = useState(() => JSON.parse(sessionStorage.getItem('testSuite')) || {
         testsuite_name: '',
         testsuite_owner: '',
@@ -31,6 +32,14 @@ function TestScriptBuilder() {
         action_name: 'ui_open_browser',
         action_fields: {}
     }]);
+
+    const searchInputRef = useRef(null);
+
+    useEffect(() => {
+        if (showSuggestions && searchInputRef.current) {
+            searchInputRef.current.focus();
+        }
+    }, [showSuggestions]);
 
     useEffect(() => {
         sessionStorage.setItem('testSuite', JSON.stringify(testSuite));
@@ -50,6 +59,7 @@ function TestScriptBuilder() {
         // Handler to close the dropdown if clicked outside
         function handleClickOutside(event) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setObjectSearchTerm('');
                 setShowSuggestions(false);
             }
         }
@@ -65,6 +75,10 @@ function TestScriptBuilder() {
     const showVariableSuggestions = (index, fieldName) => {
         if (activeInputField.actionIndex !== index || activeInputField.fieldName !== fieldName || !showSuggestions) {
             setActiveInputField({ actionIndex: index, fieldName });
+            if (Object.keys(variableMapData).length === 0) {
+                alert("No variables added in the variable map!");
+                return; // Exit the function to prevent further execution
+            }
             setVariableSuggestions(Object.keys(variableMapData));
             setShowSuggestions(true);
         } else {
@@ -75,13 +89,21 @@ function TestScriptBuilder() {
     const showObjectSuggestions = (index, fieldName) => {
         if (activeInputField.actionIndex !== index || activeInputField.fieldName !== fieldName || !showSuggestions) {
             setActiveInputField({ actionIndex: index, fieldName });
-            setObjectSuggestions(objectMapData.map(obj => obj.objectName));
-            setVariableSuggestions([]);
+
+            // Check if objectMapData is empty
+            if (objectMapData.length === 0) {
+                alert("No objects added in the object map!");
+                return;
+            }
+            setObjectSuggestions(objectMapData
+                .map(obj => obj.objectName)
+                .filter(name => name.toLowerCase().includes(objectSearchTerm.toLowerCase())));
             setShowSuggestions(true);
         } else {
             setShowSuggestions(false);
         }
     };
+    
 
     const handleVariableSuggestionClick = (suggestion) => {
         if (activeInputField.actionIndex !== null && activeInputField.fieldName !== null) {
@@ -106,6 +128,7 @@ function TestScriptBuilder() {
             return action;
         });
         setTestActions(updatedActions);
+        setObjectSearchTerm('');
         setShowSuggestions(false);
     };
 
@@ -256,6 +279,41 @@ function TestScriptBuilder() {
                                         <div key={suggestion} className="suggestion-item"
                                             onClick={() => handleVariableSuggestionClick(suggestion)}>
                                             {suggestion}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </>
+                );
+
+            case "ui_click":
+                return (
+                    <>
+                        <div>
+                            <label>Object Name</label>
+                            <input type="text" placeholder="Enter Object Name" value={action.action_fields.object_name || ''} onChange={(e) => updateActionFields(index, 'object_name', e.target.value)} />
+                            <button onClick={() => showObjectSuggestions(index, 'object_name')}>Show Objects</button>
+                        </div>
+                        <div>
+                            {index === activeInputField.actionIndex && activeInputField.fieldName === 'object_name' && showSuggestions && (
+                                <div className="suggestions-dropdown" ref={dropdownRef}>
+                                    <input
+                                        ref={searchInputRef}
+                                        type="text"
+                                        placeholder="Search objects..."
+                                        className="search-input"
+                                        value={objectSearchTerm}
+                                        onChange={(e) => {
+                                            setObjectSearchTerm(e.target.value);
+                                        }}
+                                    />
+                                    {objectSuggestions.filter(suggestion =>
+                                        suggestion.toLowerCase().includes(objectSearchTerm.toLowerCase()) // Filter based on the search term
+                                    ).map(filteredSuggestion => (
+                                        <div key={filteredSuggestion} className="suggestion-item"
+                                            onClick={() => handleObjectSuggestionClick(filteredSuggestion)}>
+                                            {filteredSuggestion}
                                         </div>
                                     ))}
                                 </div>
