@@ -18,24 +18,92 @@ function WelcomePage({ onNewClick }) {
         setShowModal(true);
     };
 
+    const validateVariableMapJSON = (json) => {
+        for (let key in json) {
+            if (typeof key !== 'string') {
+                return `Key '${key}' should be a string. Invalid Variable Map JSON. Fix it.`;
+            }
+            if (typeof json[key] !== 'string') {
+                return `Value for key '${key}' should be a string. Invalid Variable Map JSON. Fix it.`;
+            }
+        }
+        return null; // JSON is valid
+    };
+
+    const validateObjectMapJSON = (json) => {
+        const expectedValueType = { locator_name: 'string', locator_value: 'string' };
+
+        for (let key in json) {
+            if (typeof key !== 'string') {
+                return `Key '${key}' should be a string. Invalid Object Map JSON. Fix it.`;
+            }
+
+            const value = json[key];
+            if (typeof value !== 'object') {
+                return `Value for key '${key}' should be an object. Invalid Object Map JSON. Fix it.`;
+            }
+
+            for (let prop in expectedValueType) {
+                if (!value.hasOwnProperty(prop) || typeof value[prop] !== expectedValueType[prop]) {
+                    return `Key '${key}' should have a property '${prop}' of type ${expectedValueType[prop]}. Invalid Object Map JSON. Fix it.`;
+                }
+            }
+        }
+        return null;
+    };
+
     const handleVariableMapChange = (event) => {
         if (event.target.files && event.target.files[0]) {
-            setVariableMapFile(event.target.files[0]);
-            setVariableMapUploaded(true); // Set uploaded state to true
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const fileContent = JSON.parse(e.target.result);
+                    const validationResult = validateVariableMapJSON(fileContent);
+                    if (validationResult) {
+                        setVariableMapError(validationResult); // Set the validation error message
+                        setVariableMapUploaded(false);
+                    } else {
+                        setVariableMapFile(event.target.files[0]);
+                        setVariableMapUploaded(true);
+                        setVariableMapError(false);
+                    }
+                } catch (error) {
+                    setVariableMapError('Invalid JSON format.');
+                    setVariableMapUploaded(false);
+                }
+            };
+            reader.readAsText(event.target.files[0]);
         } else {
-            setVariableMapUploaded(false); // Reset uploaded state
+            setVariableMapUploaded(false);
         }
     };
 
     const handleObjectMapChange = (event) => {
         if (event.target.files && event.target.files[0]) {
-            setObjectMapFile(event.target.files[0]);
-            setObjectMapUploaded(true); // Set uploaded state to true
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const fileContent = JSON.parse(e.target.result);
+                    const validationResult = validateObjectMapJSON(fileContent);
+                    if (validationResult) {
+                        setObjectMapError(validationResult); // Set the validation error message
+                        setObjectMapUploaded(false);
+                    } else {
+                        setObjectMapFile(event.target.files[0]);
+                        setObjectMapUploaded(true);
+                        setObjectMapError(false);
+                    }
+                } catch (error) {
+                    setObjectMapError('Invalid JSON format');
+                    setObjectMapUploaded(false);
+                }
+            };
+            reader.readAsText(event.target.files[0]);
         } else {
-            setObjectMapUploaded(false); // Reset uploaded state
+            setObjectMapUploaded(false);
         }
     };
-
+    
     const startScripting = () => {
         setVariableMapError(false);
         setObjectMapError(false);
@@ -124,10 +192,10 @@ function WelcomePage({ onNewClick }) {
                                             onChange={handleVariableMapChange}
                                         />
                                         {variableMapUploaded && <img src={checkmark} alt="Uploaded" />}
+                                        {variableMapError && (
+                                            <p className="error-message">{variableMapError}</p>
+                                        )}
                                     </div>
-                                )}
-                                {hasVariableMap && variableMapError && (
-                                    <p className="error-message">Please upload the Variable Map file.</p>
                                 )}
                             </div>
                             <div className="radio-group">
@@ -159,10 +227,10 @@ function WelcomePage({ onNewClick }) {
                                             onChange={handleObjectMapChange}
                                         />
                                         {objectMapUploaded && <img src={checkmark} alt="Uploaded" />}
+                                        {objectMapError && (
+                                            <p className="error-message">{objectMapError}</p>
+                                        )}
                                     </div>
-                                )}
-                                {hasObjectMap && objectMapError && (
-                                    <p className="error-message">Please upload the Object Map file.</p>
                                 )}
                             </div>
                         </div>
