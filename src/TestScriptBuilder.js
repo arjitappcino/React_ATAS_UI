@@ -16,6 +16,7 @@ function TestScriptBuilder() {
     const [showModal, setShowModal] = useState(false);
     const dropdownRef = useRef(null);
     const [objectSearchTerm, setObjectSearchTerm] = useState('');
+    const [variableSearchTerm, setVariableSearchTerm] = useState('');
     const [testSuite, setTestSuite] = useState(() => JSON.parse(sessionStorage.getItem('testSuite')) || {
         testsuite_name: '',
         testsuite_owner: '',
@@ -60,6 +61,7 @@ function TestScriptBuilder() {
         function handleClickOutside(event) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setObjectSearchTerm('');
+                setVariableSearchTerm('');
                 setShowSuggestions(false);
             }
         }
@@ -80,6 +82,7 @@ function TestScriptBuilder() {
                 return; // Exit the function to prevent further execution
             }
             setVariableSuggestions(Object.keys(variableMapData));
+            setVariableSearchTerm(''); // Reset the search term
             setShowSuggestions(true);
         } else {
             setShowSuggestions(false);
@@ -98,12 +101,13 @@ function TestScriptBuilder() {
             setObjectSuggestions(objectMapData
                 .map(obj => obj.objectName)
                 .filter(name => name.toLowerCase().includes(objectSearchTerm.toLowerCase())));
+            setObjectSearchTerm('');
             setShowSuggestions(true);
         } else {
             setShowSuggestions(false);
         }
     };
-    
+
 
     const handleVariableSuggestionClick = (suggestion) => {
         if (activeInputField.actionIndex !== null && activeInputField.fieldName !== null) {
@@ -128,6 +132,7 @@ function TestScriptBuilder() {
             return action;
         });
         setTestActions(updatedActions);
+        setVariableSearchTerm('');
         setObjectSearchTerm('');
         setShowSuggestions(false);
     };
@@ -199,6 +204,30 @@ function TestScriptBuilder() {
         sessionStorage.removeItem('testActions');
     };
 
+    const renderVariableSuggestionsDropdown = (placeholder, searchTerm, suggestions, onSuggestionClick) => {
+        return (
+            <div className="suggestions-dropdown" ref={dropdownRef}>
+                <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder={placeholder}
+                    className="search-input"
+                    value={searchTerm}
+                    onChange={(e) => setVariableSearchTerm(e.target.value)}
+                />
+                {suggestions
+                    .filter(suggestion => suggestion.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .map(suggestion => (
+                        <div key={suggestion} className="suggestion-item"
+                            onClick={() => onSuggestionClick(suggestion)}>
+                            {suggestion}
+                        </div>
+                    ))
+                }
+            </div>
+        );
+    };
+
     const renderActionFields = (action, index) => {
         switch (action.action_name) {
             case "ui_open_browser":
@@ -234,14 +263,12 @@ function TestScriptBuilder() {
                         </div>
                         <div>
                             {index === activeInputField.actionIndex && activeInputField.fieldName === 'url' && showSuggestions && (
-                                <div className="suggestions-dropdown">
-                                    {variableSuggestions.map(suggestion => (
-                                        <div key={suggestion} className="suggestion-item"
-                                            onClick={() => handleVariableSuggestionClick(suggestion)}>
-                                            {suggestion}
-                                        </div>
-                                    ))}
-                                </div>
+                                renderVariableSuggestionsDropdown(
+                                    "Search variables...",
+                                    variableSearchTerm,
+                                    variableSuggestions,
+                                    handleVariableSuggestionClick
+                                )
                             )}
                         </div>
                     </>
