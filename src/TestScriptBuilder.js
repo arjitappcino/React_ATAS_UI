@@ -183,17 +183,29 @@ function TestScriptBuilder() {
     };
 
     const updateActionFields = (index, fieldName, value) => {
+        const currentAction = testActions[index];
+        let updatedActionFields = { ...currentAction.action_fields, [fieldName]: value };
+    
+        if (fieldName === "method_name") {
+            // Update method_type to 'void' for 'loginIntoWithUsernameAndPassword', otherwise reset
+            updatedActionFields = {
+                ...updatedActionFields,
+                method_argument: '', // Reset method_argument when method_name changes
+                method_type: 'void' // Set default typeValue based on method_name
+            };
+        }
+    
         const updatedActions = testActions.map((action, i) => {
             if (i === index) {
-                return {
-                    ...action,
-                    action_fields: { ...action.action_fields, [fieldName]: value }
-                };
+                return { ...action, action_fields: updatedActionFields };
             }
             return action;
         });
+    
         setTestActions(updatedActions);
     };
+    
+
 
     const resetState = () => {
         setTestSuite({ testsuite_name: '', testsuite_owner: '', object_map_external: '', variable_map_external: '' });
@@ -203,6 +215,29 @@ function TestScriptBuilder() {
         sessionStorage.removeItem('testCase');
         sessionStorage.removeItem('testActions');
     };
+
+    const getPlaceholderForMethodName = (methodName) => {
+        const placeholders = {
+            loginIntoWithUsernameAndPassword: "URL | USERNAME | PASSWORD",
+            clickOnButton: "BUTTON NAME",
+            clickOnSitePage: "SITE PAGE NAME",
+            populateFieldWithValue: "FIELD NAME | EXACT VALUE TO BE POPULATED",
+            populateFieldWith: "FIELD NAME | VALUE_1,VALUE_2,VALUE_3,...",
+            waitForProgressBar: "Not required",
+            waitForSeconds: "5 (in seconds)",
+            refresh: "Not required",
+            tearDown: "Not required",
+            logout: "Not required",
+            populateRecordTypeUserFilterWith: "FILTER NAME | FILTER VALUE",
+            clickOnCheckboxOption: "OPTION NAME",
+            clickOnRadioOption: "OPTION NAME",
+            clickOnRecordGridNavigation: 'navOption (Navigation option can only be "First", "Previous", "Next", or "Last")'
+        };
+
+        return placeholders[methodName] || "Enter Method Argument";
+    };
+
+
 
     const renderVariableSuggestionsDropdown = (placeholder, searchTerm, suggestions, onSuggestionClick) => {
         return (
@@ -229,6 +264,7 @@ function TestScriptBuilder() {
     };
 
     const renderActionFields = (action, index) => {
+
         switch (action.action_name) {
             case "ui_open_browser":
                 return (
@@ -405,6 +441,42 @@ function TestScriptBuilder() {
                                     handleVariableSuggestionClick
                                 )
                             )}
+                        </div>
+                    </>
+                );
+
+            case "ui_appian_action":
+                const argumentPlaceholder = getPlaceholderForMethodName(action.action_fields.method_name);
+                return (
+                    <>
+                        <div>
+                            <label>Method Name:</label>
+                            <select onChange={(e) => updateActionFields(index, 'method_name', e.target.value)} value={action.action_fields.method_name || ''}>
+                                <option value="">Select Method</option>
+                                <option value="loginIntoWithUsernameAndPassword">loginWithUsernameAndPassword</option>
+                                <option value="clickOnButton">clickOnButton</option>
+                                <option value="clickOnSitePage">clickOnSitePage</option>
+                                <option value="populateFieldWithValue">populateFieldWithValue</option>
+                                <option value="populateFieldWith">populateFieldWith</option>
+                                <option value="waitForProgressBar">waitForProgressBar</option>
+                                <option value="waitForSeconds">waitForSeconds</option>
+                                <option value="populateRecordTypeUserFilterWith">populateRecordTypeUserFilterWith</option>
+                                <option value="logout">logout</option>
+                                <option value="tearDown">tearDown</option>
+                                <option value="refresh">refresh</option>
+                                <option value="clickOnCheckboxOption">clickOnCheckboxOption</option>
+                                <option value="clickOnRadioOption">clickOnRadioOption</option>
+                                <option value="clickOnRecordGridNavigation">clickOnRecordGridNavigation</option>
+                                <option value="openUserProfile">openUserProfile</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Method Argument:</label>
+                            <input type="text" placeholder={argumentPlaceholder} value={action.action_fields.method_argument || ''} onChange={(e) => updateActionFields(index, 'method_argument', e.target.value)} />
+                        </div>
+                        <div>
+                            <label>Method Type:</label>
+                            <input type="text" value={action.action_fields.method_type || ''} onChange={(e) => updateActionFields(index, 'method_type', e.target.value)} />
                         </div>
                     </>
                 );
