@@ -285,10 +285,22 @@ function TestScriptBuilder() {
                         <div>
                             {index === activeInputField.actionIndex && activeInputField.fieldName === 'object_name' && showSuggestions && (
                                 <div className="suggestions-dropdown" ref={dropdownRef}>
-                                    {objectSuggestions.map(suggestion => (
-                                        <div key={suggestion} className="suggestion-item"
-                                            onClick={() => handleObjectSuggestionClick(suggestion)}>
-                                            {suggestion}
+                                    <input
+                                        ref={searchInputRef}
+                                        type="text"
+                                        placeholder="Search objects..."
+                                        className="search-input"
+                                        value={objectSearchTerm}
+                                        onChange={(e) => {
+                                            setObjectSearchTerm(e.target.value);
+                                        }}
+                                    />
+                                    {objectSuggestions.filter(suggestion =>
+                                        suggestion.toLowerCase().includes(objectSearchTerm.toLowerCase()) // Filter based on the search term
+                                    ).map(filteredSuggestion => (
+                                        <div key={filteredSuggestion} className="suggestion-item"
+                                            onClick={() => handleObjectSuggestionClick(filteredSuggestion)}>
+                                            {filteredSuggestion}
                                         </div>
                                     ))}
                                 </div>
@@ -301,14 +313,12 @@ function TestScriptBuilder() {
                         </div>
                         <div>
                             {index === activeInputField.actionIndex && activeInputField.fieldName === 'input_value' && showSuggestions && (
-                                <div className="suggestions-dropdown">
-                                    {variableSuggestions.map(suggestion => (
-                                        <div key={suggestion} className="suggestion-item"
-                                            onClick={() => handleVariableSuggestionClick(suggestion)}>
-                                            {suggestion}
-                                        </div>
-                                    ))}
-                                </div>
+                                renderVariableSuggestionsDropdown(
+                                    "Search variables...",
+                                    variableSearchTerm,
+                                    variableSuggestions,
+                                    handleVariableSuggestionClick
+                                )
                             )}
                         </div>
                     </>
@@ -349,6 +359,55 @@ function TestScriptBuilder() {
                     </>
                 );
 
+            case "ui_verify_text":
+                return (
+                    <>
+                        <div>
+                            <label>Object Name</label>
+                            <input type="text" placeholder="Enter Object Name" value={action.action_fields.object_name || ''} onChange={(e) => updateActionFields(index, 'object_name', e.target.value)} />
+                            <button onClick={() => showObjectSuggestions(index, 'object_name')}>Show Objects</button>
+                        </div>
+                        <div>
+                            {index === activeInputField.actionIndex && activeInputField.fieldName === 'object_name' && showSuggestions && (
+                                <div className="suggestions-dropdown" ref={dropdownRef}>
+                                    <input
+                                        ref={searchInputRef}
+                                        type="text"
+                                        placeholder="Search objects..."
+                                        className="search-input"
+                                        value={objectSearchTerm}
+                                        onChange={(e) => {
+                                            setObjectSearchTerm(e.target.value);
+                                        }}
+                                    />
+                                    {objectSuggestions.filter(suggestion =>
+                                        suggestion.toLowerCase().includes(objectSearchTerm.toLowerCase()) // Filter based on the search term
+                                    ).map(filteredSuggestion => (
+                                        <div key={filteredSuggestion} className="suggestion-item"
+                                            onClick={() => handleObjectSuggestionClick(filteredSuggestion)}>
+                                            {filteredSuggestion}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        <div>
+                            <label>Expected Text</label>
+                            <input type="text" placeholder="Enter Expected Text Value" value={action.action_fields.expected_text || ''} onChange={(e) => updateActionFields(index, 'expected_text', e.target.value)} />
+                            <button onClick={() => showVariableSuggestions(index, 'expected_text')}>Show Variables</button>
+                        </div>
+                        <div>
+                            {index === activeInputField.actionIndex && activeInputField.fieldName === 'expected_text' && showSuggestions && (
+                                renderVariableSuggestionsDropdown(
+                                    "Search variables...",
+                                    variableSearchTerm,
+                                    variableSuggestions,
+                                    handleVariableSuggestionClick
+                                )
+                            )}
+                        </div>
+                    </>
+                );
             default:
                 return null;
         }
