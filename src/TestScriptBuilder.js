@@ -17,6 +17,7 @@ function TestScriptBuilder() {
     const dropdownRef = useRef(null);
     const [objectSearchTerm, setObjectSearchTerm] = useState('');
     const [variableSearchTerm, setVariableSearchTerm] = useState('');
+    const fileInputRef = useRef(null);
     const [testSuite, setTestSuite] = useState(() => JSON.parse(sessionStorage.getItem('testSuite')) || {
         testsuite_name: '',
         testsuite_owner: '',
@@ -30,7 +31,7 @@ function TestScriptBuilder() {
     });
     const [testActions, setTestActions] = useState(() => JSON.parse(sessionStorage.getItem('testActions')) || [{
         action_type: 'ui',
-        action_name: 'ui_open_browser',
+        action_name: '',
         action_fields: {}
     }]);
 
@@ -73,6 +74,19 @@ function TestScriptBuilder() {
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, [dropdownRef]);
+
+    const handleAddFromSystemClick = () => {
+        fileInputRef.current.click();
+    };
+
+    const handleFileSelect = (e, index) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Use file.name to get the name of the file
+            const path = file.path;
+            updateActionFields(index, 'template_path', path);
+        }
+    };
 
     const showVariableSuggestions = (index, fieldName) => {
         if (activeInputField.actionIndex !== index || activeInputField.fieldName !== fieldName || !showSuggestions) {
@@ -164,8 +178,22 @@ function TestScriptBuilder() {
         setTestCase({ ...testCase, [name]: value });
     };
 
-    const addTestAction = () => {
-        setTestActions([...testActions, { action_type: 'ui', action_name: '', action_fields: {} }]);
+    const getDefaultActionFields = (actionName) => {
+        switch (actionName) {
+            case "ui_open_browser":
+                return { browser_name: 'chrome', sso_login: 'no', browser_zoom: '0.8' };
+            case "ui_navigate":
+                return { url: '' };
+            case "ui_input":
+                return { object_name: '', input_value: '' };
+            default:
+                return {};
+        }
+    };
+
+    const addTestAction = (actionName) => {
+        const defaultActionFields = getDefaultActionFields(actionName);
+        setTestActions([...testActions, { action_type: 'ui', action_name: actionName, action_fields: defaultActionFields }]);
     };
 
     const handleActionTypeChange = (index, value) => {
@@ -176,16 +204,15 @@ function TestScriptBuilder() {
     };
 
     const handleActionNameChange = (index, value) => {
-        const updatedActions = testActions.map((action, i) =>
+        setTestActions(testActions => testActions.map((action, i) =>
             i === index ? { ...action, action_name: value, action_fields: {} } : action
-        );
-        setTestActions(updatedActions);
+        ));
     };
 
     const updateActionFields = (index, fieldName, value) => {
         const currentAction = testActions[index];
         let updatedActionFields = { ...currentAction.action_fields, [fieldName]: value };
-    
+
         if (fieldName === "method_name") {
             // Update method_type to 'void' for 'loginIntoWithUsernameAndPassword', otherwise reset
             updatedActionFields = {
@@ -194,17 +221,18 @@ function TestScriptBuilder() {
                 method_type: 'void' // Set default typeValue based on method_name
             };
         }
-    
+
+
         const updatedActions = testActions.map((action, i) => {
             if (i === index) {
                 return { ...action, action_fields: updatedActionFields };
             }
             return action;
         });
-    
+
         setTestActions(updatedActions);
     };
-    
+
 
 
     const resetState = () => {
@@ -270,22 +298,24 @@ function TestScriptBuilder() {
                 return (
                     <>
                         <div>
-                            <label>Browser Name:</label>
+                            <label>Browser Name</label>
                             <select onChange={(e) => updateActionFields(index, 'browser_name', e.target.value)}>
+                                <option value="">Select Browser</option>
                                 <option value="chrome">Chrome</option>
                                 <option value="edge">Edge</option>
                             </select>
                         </div>
                         <div>
-                            <label>SSO Login:</label>
+                            <label>SSO Login</label>
                             <select onChange={(e) => updateActionFields(index, 'sso_login', e.target.value)}>
+                                <option value="">Select Yes/No</option>
                                 <option value="no">No</option>
                                 <option value="yes">Yes</option>
                             </select>
                         </div>
                         <div>
-                            <label>Browser Zoom:</label>
-                            <input type="text" defaultValue="0.8" onChange={(e) => updateActionFields(index, 'browser_zoom', e.target.value)} />
+                            <label>Browser Zoom</label>
+                            <input type="text" placeholder="Default is 0.8 i.e. 80%" onChange={(e) => updateActionFields(index, 'browser_zoom', e.target.value)} />
                         </div>
                     </>
                 );
@@ -480,6 +510,62 @@ function TestScriptBuilder() {
                         </div>
                     </>
                 );
+
+            case "ui_appian_open_browser":
+                return (
+                    <>
+                        <div>
+                            <label>Browser Name:</label>
+                            <select onChange={(e) => updateActionFields(index, 'browser_name', e.target.value)}>
+                                <option value="chrome">Chrome</option>
+                                <option value="edge">Edge</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>SSO Login:</label>
+                            <select onChange={(e) => updateActionFields(index, 'sso_login', e.target.value)}>
+                                <option value="no">No</option>
+                                <option value="yes">Yes</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Browser Zoom:</label>
+                            <input type="text" defaultValue="0.8" onChange={(e) => updateActionFields(index, 'browser_zoom', e.target.value)} />
+                        </div>
+                    </>
+                );
+
+            case "add_from_template":
+                return (
+                    <>
+                        <div>
+                            <label>Template Name</label>
+                            <input
+                                type="text"
+                                placeholder="Enter Template Name"
+                                value={action.action_fields.template_name || ''}
+                                onChange={(e) => updateActionFields(index, 'template_name', e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <label>Template Path</label>
+                            <input
+                                type="text"
+                                placeholder="Enter Template Path"
+                                value={action.action_fields.template_path || ''}
+                                onChange={(e) => updateActionFields(index, 'template_path', e.target.value)}
+                            />
+                        </div>
+                        <input
+                            type="file"
+                            style={{ display: 'none' }}
+                            ref={fileInputRef}
+                            onChange={(e) => handleFileSelect(e, index)}
+                            accept=".json"
+                        />
+                    </>
+                );
+
             default:
                 return null;
         }
@@ -513,7 +599,6 @@ function TestScriptBuilder() {
         setShowModal(true); // Show the modal with the JSON
     };
 
-
     const copyToClipboard = () => {
         navigator.clipboard.writeText(finalJSON).then(() => {
             alert('JSON copied to clipboard!'); // Replace with a more elegant notification if desired
@@ -537,7 +622,7 @@ function TestScriptBuilder() {
                     renderJSON={renderJSON}
                 />
             ))}
-            <button onClick={addTestAction} className="add-action-btn">Add Test Action</button>
+            <button onClick={() => addTestAction("default_action_name")} className="add-action-btn">Add Test Action</button>
             <button onClick={generateFinalJSON} className="generate-json-btn">Generate JSON</button>
             <button onClick={resetState} className="reset-btn">Reset</button>
             {showModal && (

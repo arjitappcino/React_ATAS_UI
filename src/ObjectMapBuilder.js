@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './ObjectMapBuilder.css'; // Ensure your CSS is adapted for React
 
-const locatorNames = ['Select Locator Type', 'ID', 'Name', 'ClassName', 'LinkText', 'Partial LinkText', 'TagName', 'CssSelector', 'XPath'];
+const locatorNames = ['Select Locator Type', 'id', 'name', 'className', 'linkText', 'partialLinkText', 'tagName', 'cssSelector', 'xpath'];
 const xpathTypes = ['Select XPath Type', 'using attribute', 'using text', 'using contains', 'using starts-with', 'using multiple attributes', 'using index', 'custom'];
 
 function ObjectMapBuilder({ objectMapFile }) {
