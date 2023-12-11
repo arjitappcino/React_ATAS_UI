@@ -17,6 +17,7 @@ function TestScriptBuilder() {
     const dropdownRef = useRef(null);
     const [objectSearchTerm, setObjectSearchTerm] = useState('');
     const [variableSearchTerm, setVariableSearchTerm] = useState('');
+    const fileInputRef = useRef(null);
     const [testSuite, setTestSuite] = useState(() => JSON.parse(sessionStorage.getItem('testSuite')) || {
         testsuite_name: '',
         testsuite_owner: '',
@@ -30,7 +31,7 @@ function TestScriptBuilder() {
     });
     const [testActions, setTestActions] = useState(() => JSON.parse(sessionStorage.getItem('testActions')) || [{
         action_type: 'ui',
-        action_name: 'ui_open_browser',
+        action_name: '',
         action_fields: {}
     }]);
 
@@ -73,6 +74,19 @@ function TestScriptBuilder() {
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, [dropdownRef]);
+
+    const handleAddFromSystemClick = () => {
+        fileInputRef.current.click();
+    };
+
+    const handleFileSelect = (e, index) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Use file.name to get the name of the file
+            const path = file.path;
+            updateActionFields(index, 'template_path', path);
+        }
+    };
 
     const showVariableSuggestions = (index, fieldName) => {
         if (activeInputField.actionIndex !== index || activeInputField.fieldName !== fieldName || !showSuggestions) {
@@ -164,8 +178,22 @@ function TestScriptBuilder() {
         setTestCase({ ...testCase, [name]: value });
     };
 
-    const addTestAction = () => {
-        setTestActions([...testActions, { action_type: 'ui', action_name: '', action_fields: {} }]);
+    const getDefaultActionFields = (actionName) => {
+        switch (actionName) {
+            case "ui_open_browser":
+                return { browser_name: 'chrome', sso_login: 'no', browser_zoom: '0.8' };
+            case "ui_navigate":
+                return { url: '' };
+            case "ui_input":
+                return { object_name: '', input_value: '' };
+            default:
+                return {};
+        }
+    };
+
+    const addTestAction = (actionName) => {
+        const defaultActionFields = getDefaultActionFields(actionName);
+        setTestActions([...testActions, { action_type: 'ui', action_name: actionName, action_fields: defaultActionFields }]);
     };
 
     const handleActionTypeChange = (index, value) => {
@@ -176,24 +204,36 @@ function TestScriptBuilder() {
     };
 
     const handleActionNameChange = (index, value) => {
-        const updatedActions = testActions.map((action, i) =>
+        setTestActions(testActions => testActions.map((action, i) =>
             i === index ? { ...action, action_name: value, action_fields: {} } : action
-        );
-        setTestActions(updatedActions);
+        ));
     };
 
     const updateActionFields = (index, fieldName, value) => {
+        const currentAction = testActions[index];
+        let updatedActionFields = { ...currentAction.action_fields, [fieldName]: value };
+
+        if (fieldName === "method_name") {
+            // Update method_type to 'void' for 'loginIntoWithUsernameAndPassword', otherwise reset
+            updatedActionFields = {
+                ...updatedActionFields,
+                method_argument: '', // Reset method_argument when method_name changes
+                method_type: 'void' // Set default typeValue based on method_name
+            };
+        }
+
+
         const updatedActions = testActions.map((action, i) => {
             if (i === index) {
-                return {
-                    ...action,
-                    action_fields: { ...action.action_fields, [fieldName]: value }
-                };
+                return { ...action, action_fields: updatedActionFields };
             }
             return action;
         });
+
         setTestActions(updatedActions);
     };
+
+
 
     const resetState = () => {
         setTestSuite({ testsuite_name: '', testsuite_owner: '', object_map_external: '', variable_map_external: '' });
@@ -203,6 +243,29 @@ function TestScriptBuilder() {
         sessionStorage.removeItem('testCase');
         sessionStorage.removeItem('testActions');
     };
+
+    const getPlaceholderForMethodName = (methodName) => {
+        const placeholders = {
+            loginIntoWithUsernameAndPassword: "URL | USERNAME | PASSWORD",
+            clickOnButton: "BUTTON NAME",
+            clickOnSitePage: "SITE PAGE NAME",
+            populateFieldWithValue: "FIELD NAME | EXACT VALUE TO BE POPULATED",
+            populateFieldWith: "FIELD NAME | VALUE_1,VALUE_2,VALUE_3,...",
+            waitForProgressBar: "Not required",
+            waitForSeconds: "5 (in seconds)",
+            refresh: "Not required",
+            tearDown: "Not required",
+            logout: "Not required",
+            populateRecordTypeUserFilterWith: "FILTER NAME | FILTER VALUE",
+            clickOnCheckboxOption: "OPTION NAME",
+            clickOnRadioOption: "OPTION NAME",
+            clickOnRecordGridNavigation: 'navOption (Navigation option can only be "First", "Previous", "Next", or "Last")'
+        };
+
+        return placeholders[methodName] || "Enter Method Argument";
+    };
+
+
 
     const renderVariableSuggestionsDropdown = (placeholder, searchTerm, suggestions, onSuggestionClick) => {
         return (
@@ -229,27 +292,30 @@ function TestScriptBuilder() {
     };
 
     const renderActionFields = (action, index) => {
+
         switch (action.action_name) {
             case "ui_open_browser":
                 return (
                     <>
                         <div>
-                            <label>Browser Name:</label>
+                            <label>Browser Name</label>
                             <select onChange={(e) => updateActionFields(index, 'browser_name', e.target.value)}>
+                                <option value="">Select Browser</option>
                                 <option value="chrome">Chrome</option>
                                 <option value="edge">Edge</option>
                             </select>
                         </div>
                         <div>
-                            <label>SSO Login:</label>
+                            <label>SSO Login</label>
                             <select onChange={(e) => updateActionFields(index, 'sso_login', e.target.value)}>
+                                <option value="">Select Yes/No</option>
                                 <option value="no">No</option>
                                 <option value="yes">Yes</option>
                             </select>
                         </div>
                         <div>
-                            <label>Browser Zoom:</label>
-                            <input type="text" defaultValue="0.8" onChange={(e) => updateActionFields(index, 'browser_zoom', e.target.value)} />
+                            <label>Browser Zoom</label>
+                            <input type="text" placeholder="Default is 0.8 i.e. 80%" onChange={(e) => updateActionFields(index, 'browser_zoom', e.target.value)} />
                         </div>
                     </>
                 );
@@ -285,10 +351,22 @@ function TestScriptBuilder() {
                         <div>
                             {index === activeInputField.actionIndex && activeInputField.fieldName === 'object_name' && showSuggestions && (
                                 <div className="suggestions-dropdown" ref={dropdownRef}>
-                                    {objectSuggestions.map(suggestion => (
-                                        <div key={suggestion} className="suggestion-item"
-                                            onClick={() => handleObjectSuggestionClick(suggestion)}>
-                                            {suggestion}
+                                    <input
+                                        ref={searchInputRef}
+                                        type="text"
+                                        placeholder="Search objects..."
+                                        className="search-input"
+                                        value={objectSearchTerm}
+                                        onChange={(e) => {
+                                            setObjectSearchTerm(e.target.value);
+                                        }}
+                                    />
+                                    {objectSuggestions.filter(suggestion =>
+                                        suggestion.toLowerCase().includes(objectSearchTerm.toLowerCase()) // Filter based on the search term
+                                    ).map(filteredSuggestion => (
+                                        <div key={filteredSuggestion} className="suggestion-item"
+                                            onClick={() => handleObjectSuggestionClick(filteredSuggestion)}>
+                                            {filteredSuggestion}
                                         </div>
                                     ))}
                                 </div>
@@ -301,14 +379,12 @@ function TestScriptBuilder() {
                         </div>
                         <div>
                             {index === activeInputField.actionIndex && activeInputField.fieldName === 'input_value' && showSuggestions && (
-                                <div className="suggestions-dropdown">
-                                    {variableSuggestions.map(suggestion => (
-                                        <div key={suggestion} className="suggestion-item"
-                                            onClick={() => handleVariableSuggestionClick(suggestion)}>
-                                            {suggestion}
-                                        </div>
-                                    ))}
-                                </div>
+                                renderVariableSuggestionsDropdown(
+                                    "Search variables...",
+                                    variableSearchTerm,
+                                    variableSuggestions,
+                                    handleVariableSuggestionClick
+                                )
                             )}
                         </div>
                     </>
@@ -349,6 +425,147 @@ function TestScriptBuilder() {
                     </>
                 );
 
+            case "ui_verify_text":
+                return (
+                    <>
+                        <div>
+                            <label>Object Name</label>
+                            <input type="text" placeholder="Enter Object Name" value={action.action_fields.object_name || ''} onChange={(e) => updateActionFields(index, 'object_name', e.target.value)} />
+                            <button onClick={() => showObjectSuggestions(index, 'object_name')}>Show Objects</button>
+                        </div>
+                        <div>
+                            {index === activeInputField.actionIndex && activeInputField.fieldName === 'object_name' && showSuggestions && (
+                                <div className="suggestions-dropdown" ref={dropdownRef}>
+                                    <input
+                                        ref={searchInputRef}
+                                        type="text"
+                                        placeholder="Search objects..."
+                                        className="search-input"
+                                        value={objectSearchTerm}
+                                        onChange={(e) => {
+                                            setObjectSearchTerm(e.target.value);
+                                        }}
+                                    />
+                                    {objectSuggestions.filter(suggestion =>
+                                        suggestion.toLowerCase().includes(objectSearchTerm.toLowerCase()) // Filter based on the search term
+                                    ).map(filteredSuggestion => (
+                                        <div key={filteredSuggestion} className="suggestion-item"
+                                            onClick={() => handleObjectSuggestionClick(filteredSuggestion)}>
+                                            {filteredSuggestion}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        <div>
+                            <label>Expected Text</label>
+                            <input type="text" placeholder="Enter Expected Text Value" value={action.action_fields.expected_text || ''} onChange={(e) => updateActionFields(index, 'expected_text', e.target.value)} />
+                            <button onClick={() => showVariableSuggestions(index, 'expected_text')}>Show Variables</button>
+                        </div>
+                        <div>
+                            {index === activeInputField.actionIndex && activeInputField.fieldName === 'expected_text' && showSuggestions && (
+                                renderVariableSuggestionsDropdown(
+                                    "Search variables...",
+                                    variableSearchTerm,
+                                    variableSuggestions,
+                                    handleVariableSuggestionClick
+                                )
+                            )}
+                        </div>
+                    </>
+                );
+
+            case "ui_appian_action":
+                const argumentPlaceholder = getPlaceholderForMethodName(action.action_fields.method_name);
+                return (
+                    <>
+                        <div>
+                            <label>Method Name:</label>
+                            <select onChange={(e) => updateActionFields(index, 'method_name', e.target.value)} value={action.action_fields.method_name || ''}>
+                                <option value="">Select Method</option>
+                                <option value="loginIntoWithUsernameAndPassword">loginWithUsernameAndPassword</option>
+                                <option value="clickOnButton">clickOnButton</option>
+                                <option value="clickOnSitePage">clickOnSitePage</option>
+                                <option value="populateFieldWithValue">populateFieldWithValue</option>
+                                <option value="populateFieldWith">populateFieldWith</option>
+                                <option value="waitForProgressBar">waitForProgressBar</option>
+                                <option value="waitForSeconds">waitForSeconds</option>
+                                <option value="populateRecordTypeUserFilterWith">populateRecordTypeUserFilterWith</option>
+                                <option value="logout">logout</option>
+                                <option value="tearDown">tearDown</option>
+                                <option value="refresh">refresh</option>
+                                <option value="clickOnCheckboxOption">clickOnCheckboxOption</option>
+                                <option value="clickOnRadioOption">clickOnRadioOption</option>
+                                <option value="clickOnRecordGridNavigation">clickOnRecordGridNavigation</option>
+                                <option value="openUserProfile">openUserProfile</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Method Argument:</label>
+                            <input type="text" placeholder={argumentPlaceholder} value={action.action_fields.method_argument || ''} onChange={(e) => updateActionFields(index, 'method_argument', e.target.value)} />
+                        </div>
+                        <div>
+                            <label>Method Type:</label>
+                            <input type="text" value={action.action_fields.method_type || ''} onChange={(e) => updateActionFields(index, 'method_type', e.target.value)} />
+                        </div>
+                    </>
+                );
+
+            case "ui_appian_open_browser":
+                return (
+                    <>
+                        <div>
+                            <label>Browser Name:</label>
+                            <select onChange={(e) => updateActionFields(index, 'browser_name', e.target.value)}>
+                                <option value="chrome">Chrome</option>
+                                <option value="edge">Edge</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>SSO Login:</label>
+                            <select onChange={(e) => updateActionFields(index, 'sso_login', e.target.value)}>
+                                <option value="no">No</option>
+                                <option value="yes">Yes</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Browser Zoom:</label>
+                            <input type="text" defaultValue="0.8" onChange={(e) => updateActionFields(index, 'browser_zoom', e.target.value)} />
+                        </div>
+                    </>
+                );
+
+            case "add_from_template":
+                return (
+                    <>
+                        <div>
+                            <label>Template Name</label>
+                            <input
+                                type="text"
+                                placeholder="Enter Template Name"
+                                value={action.action_fields.template_name || ''}
+                                onChange={(e) => updateActionFields(index, 'template_name', e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <label>Template Path</label>
+                            <input
+                                type="text"
+                                placeholder="Enter Template Path"
+                                value={action.action_fields.template_path || ''}
+                                onChange={(e) => updateActionFields(index, 'template_path', e.target.value)}
+                            />
+                        </div>
+                        <input
+                            type="file"
+                            style={{ display: 'none' }}
+                            ref={fileInputRef}
+                            onChange={(e) => handleFileSelect(e, index)}
+                            accept=".json"
+                        />
+                    </>
+                );
+
             default:
                 return null;
         }
@@ -382,7 +599,6 @@ function TestScriptBuilder() {
         setShowModal(true); // Show the modal with the JSON
     };
 
-
     const copyToClipboard = () => {
         navigator.clipboard.writeText(finalJSON).then(() => {
             alert('JSON copied to clipboard!'); // Replace with a more elegant notification if desired
@@ -406,7 +622,7 @@ function TestScriptBuilder() {
                     renderJSON={renderJSON}
                 />
             ))}
-            <button onClick={addTestAction} className="add-action-btn">Add Test Action</button>
+            <button onClick={() => addTestAction("default_action_name")} className="add-action-btn">Add Test Action</button>
             <button onClick={generateFinalJSON} className="generate-json-btn">Generate JSON</button>
             <button onClick={resetState} className="reset-btn">Reset</button>
             {showModal && (

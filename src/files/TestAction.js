@@ -50,15 +50,14 @@ function TestAction({
                                     onChange={(e) => handleActionNameChange(index, e.target.value)}
                                 >
                                     <option value="">Select Action</option>
+                                    <option value="ui_appian_open_browser">Appian Open Browser</option>
+                                    <option value="ui_appian_action">Appian Action</option>
+                                    <option value="add_from_template">Add From Template</option>
                                     <option value="ui_open_browser">Open Browser</option>
                                     <option value="ui_navigate">Navigate</option>
                                     <option value="ui_input">Input</option>
                                     <option value="ui_click">Click</option>
                                     <option value="ui_verify_text">Verify Text</option>
-                                    <option value="ui_appian_open_browser">Appian Open Browser</option>
-                                    <option value="ui_appian_action">Appian Action</option>
-                                    <option value="add_from_template">Add From Template</option>
-                                    {/* Other action name options */}
                                 </select>
                             </div>
                         )}
