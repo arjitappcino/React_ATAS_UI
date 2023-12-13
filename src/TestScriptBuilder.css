@@ -1,9 +1,9 @@
 .test-script-builder-container {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: left;
     max-width: 99%;
-    margin: auto;
+    margin: 5px;
     padding-top: 10px;
     
 }
@@ -229,3 +229,41 @@ label {
     border-radius: 5px;
     margin: 10px 0; 
 }
+
+.button-container {
+    display: flex;
+    align-items: left; /* Align items vertically */
+    margin-top: 20px; /* Space above the button container */
+    margin-bottom: 20px; /* Space below the button container */
+    padding-left: auto; /* Space from the left edge of the screen */
+}
+
+.action-btn {
+    padding: 10px 20px;
+    margin-right: 10px; /* Space between buttons */
+    font-size: 16px; /* Adjust font size as needed */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.add-action-btn {
+    background-color: #4CAF50; /* Green color */
+    color: white;
+}
+
+.generate-json-btn {
+    background-color: #008CBA; /* Blue color */
+    color: white;
+}
+
+.reset-btn {
+    background-color: #f44336; /* Red color */
+    color: white;
+}
+
+.action-btn:hover {
+    opacity: 0.9; /* Slight opacity change on hover */
+}
+

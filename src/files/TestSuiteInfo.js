@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './TestSuiteInfo.css'; 
+import './TestSuiteInfo.css';
 
 function TestSuiteInfo({ testSuite, handleTestSuiteChange, renderJSON }) {
     // State to manage the expand/collapse
@@ -11,11 +11,11 @@ function TestSuiteInfo({ testSuite, handleTestSuiteChange, renderJSON }) {
     };
 
     return (
-        <div className="section-row" style={{marginTop: '45px'}}>
+        <div className="section-row" style={{ marginTop: '45px' }}>
             <div className="input-section">
                 <div className="section-header">
-                    <h2>Test Suite Info</h2>
-                    <button onClick={toggleExpand} className="toggle-expand-btn">
+                    <h2>Test Suite Info: {testSuite.testsuite_name}</h2>
+                    <button onClick={toggleExpand} className="action-btn" style={{ backgroundColor: 'grey' }}>
                         {isExpanded ? 'Collapse' : 'Expand'}
                     </button>
                 </div>

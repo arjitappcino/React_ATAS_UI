@@ -14,8 +14,8 @@ function TestCaseInfo({ testCase, handleTestCaseChange, renderJSON }) {
         <div className="section-row">
             <div className="input-section">
                 <div className="section-header">
-                    <h2>Test Case 1 Info</h2>
-                    <button onClick={toggleExpand} className="toggle-expand-btn">
+                    <h2>Test Case Info: {testCase.test_name}</h2>
+                    <button onClick={toggleExpand} className="action-btn" style={{ backgroundColor: 'grey' }}>
                         {isExpanded ? 'Collapse' : 'Expand'}
                     </button>
                 </div>

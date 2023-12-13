@@ -77,6 +77,11 @@ function VariableMapBuilder({ variableMapFile }) {
             .catch(err => console.error('Error copying JSON: ', err));
     };
 
+    const resetState = () => {
+        setVariables({});
+        sessionStorage.removeItem('objectsData');
+    };
+
     return (
         <div className="container" style={{ marginTop: '50px' }}>
             <div className="form-container">
@@ -88,7 +93,7 @@ function VariableMapBuilder({ variableMapFile }) {
                     <label>Variable Value</label>
                     <input type="text" style={{ marginLeft: '4px' }} value={variableValue} onChange={(e) => setVariableValue(e.target.value)} />
                 </div>
-                <button className="button-74" onClick={addVariable}>Add Variable</button>
+                <button className="button-74" onClick={addVariable} style={{backgroundColor: 'green'}}>Add Variable</button>
             </div>
             {Object.keys(variables).length > 0 && (
                 <table className="variable-table">
@@ -123,6 +128,7 @@ function VariableMapBuilder({ variableMapFile }) {
                 </button>
                 <button className="button-74" onClick={downloadJSON}>Download JSON</button>
                 <button className="button-74" onClick={copyJSON}>Copy JSON</button>
+                <button onClick={resetState} className="button-74" style={{backgroundColor: 'grey'}}>Reset</button>
             </div>
         </div>
     );

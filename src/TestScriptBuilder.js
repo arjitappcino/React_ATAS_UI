@@ -17,7 +17,6 @@ function TestScriptBuilder() {
     const dropdownRef = useRef(null);
     const [objectSearchTerm, setObjectSearchTerm] = useState('');
     const [variableSearchTerm, setVariableSearchTerm] = useState('');
-    const fileInputRef = useRef(null);
     const [testSuite, setTestSuite] = useState(() => JSON.parse(sessionStorage.getItem('testSuite')) || {
         testsuite_name: '',
         testsuite_owner: '',
@@ -75,18 +74,27 @@ function TestScriptBuilder() {
         };
     }, [dropdownRef]);
 
-    const handleAddFromSystemClick = () => {
-        fileInputRef.current.click();
+    const moveActionUp = (index) => {
+        if (index <= 0) return; // Can't move the first item further up
+        const newActions = [...testActions];
+        [newActions[index - 1], newActions[index]] = [newActions[index], newActions[index - 1]];
+        setTestActions(newActions);
     };
 
-    const handleFileSelect = (e, index) => {
-        const file = e.target.files[0];
-        if (file) {
-            // Use file.name to get the name of the file
-            const path = file.path;
-            updateActionFields(index, 'template_path', path);
-        }
+    const moveActionDown = (index) => {
+        if (index >= testActions.length - 1) return; // Can't move the last item further down
+        const newActions = [...testActions];
+        [newActions[index + 1], newActions[index]] = [newActions[index], newActions[index + 1]];
+        setTestActions(newActions);
     };
+
+    const addTestActionAbove = (index) => {
+        const newAction = { action_type: 'ui', action_name: '', action_fields: {} };
+        const updatedActions = [...testActions];
+        updatedActions.splice(index, 0, newAction); // Insert at the specified index
+        setTestActions(updatedActions);
+    };
+
 
     const showVariableSuggestions = (index, fieldName) => {
         if (activeInputField.actionIndex !== index || activeInputField.fieldName !== fieldName || !showSuggestions) {
@@ -517,6 +525,7 @@ function TestScriptBuilder() {
                         <div>
                             <label>Browser Name:</label>
                             <select onChange={(e) => updateActionFields(index, 'browser_name', e.target.value)}>
+                                <option value="">Select Browser</option>
                                 <option value="chrome">Chrome</option>
                                 <option value="edge">Edge</option>
                             </select>
@@ -524,6 +533,7 @@ function TestScriptBuilder() {
                         <div>
                             <label>SSO Login:</label>
                             <select onChange={(e) => updateActionFields(index, 'sso_login', e.target.value)}>
+                                <option value="">Select Yes/No</option>
                                 <option value="no">No</option>
                                 <option value="yes">Yes</option>
                             </select>
@@ -556,13 +566,6 @@ function TestScriptBuilder() {
                                 onChange={(e) => updateActionFields(index, 'template_path', e.target.value)}
                             />
                         </div>
-                        <input
-                            type="file"
-                            style={{ display: 'none' }}
-                            ref={fileInputRef}
-                            onChange={(e) => handleFileSelect(e, index)}
-                            accept=".json"
-                        />
                     </>
                 );
 
@@ -620,11 +623,16 @@ function TestScriptBuilder() {
                     removeTestAction={removeTestAction}
                     renderActionFields={renderActionFields}
                     renderJSON={renderJSON}
+                    moveActionUp={() => moveActionUp(index)}
+                    moveActionDown={() => moveActionDown(index)}
+                    addTestActionAbove={() => addTestActionAbove(index)}
                 />
             ))}
-            <button onClick={() => addTestAction("default_action_name")} className="add-action-btn">Add Test Action</button>
-            <button onClick={generateFinalJSON} className="generate-json-btn">Generate JSON</button>
-            <button onClick={resetState} className="reset-btn">Reset</button>
+            <div className="button-container">
+                <button onClick={() => addTestAction("")} className="action-btn add-action-btn">Add Test Action</button>
+                <button onClick={generateFinalJSON} className="action-btn generate-json-btn">Generate JSON</button>
+                <button onClick={resetState} className="action-btn reset-btn" style={{ backgroundColor: 'grey' }}>Reset</button>
+            </div>
             {showModal && (
                 <div className="modal">
                     <div className="modal-content">

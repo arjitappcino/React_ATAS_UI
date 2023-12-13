@@ -9,7 +9,10 @@ function TestAction({
     updateActionFields,
     removeTestAction,
     renderActionFields,
-    renderJSON
+    renderJSON,
+    moveActionUp,
+    moveActionDown,
+    addTestActionAbove
 }) {
 
     const [isExpanded, setIsExpanded] = useState(true);
@@ -24,9 +27,16 @@ function TestAction({
             <div className="input-section">
                 <div className="section-header">
                     <h2>Action {index + 1 < 10 ? `0${index + 1}` : index + 1}: {action.action_name.replace('_', ' ')}</h2>
-                    <button onClick={toggleExpand} className="toggle-expand-btn">
-                        {isExpanded ? 'Collapse' : 'Expand'}
-                    </button>
+
+                    <div className="action-buttons-container">
+                        <button className="action-btn" onClick={moveActionUp}><span style={{ fontSize: '11px' }}>🔼</span></button>
+                        <button className="action-btn" onClick={moveActionDown}><span style={{ fontSize: '11px' }}>🔽</span></button>
+                        <button className="action-btn" onClick={addTestActionAbove}>Add Action Above</button>
+                        <button className="action-btn" style={{ backgroundColor: '#dc3545' }} onClick={() => removeTestAction(index)}>Delete Action</button>
+                        <button onClick={toggleExpand} className="action-btn" style={{ backgroundColor: 'grey' }}>
+                            {isExpanded ? 'Collapse' : 'Expand'}
+                        </button>
+                    </div>
                 </div>
                 {/* Action Type Dropdown */}
                 {isExpanded && (
@@ -37,7 +47,7 @@ function TestAction({
                             onChange={(e) => handleActionTypeChange(index, e.target.value)}
                         >
                             <option value="">Select Action Type</option>
-                            <option value="ui">UI</option>
+                            <option value="ui">ui</option>
                             {/* Other action type options */}
                         </select>
 
@@ -64,11 +74,6 @@ function TestAction({
 
                         {/* Additional Fields based on the action name */}
                         {renderActionFields(action, index)}
-
-                        {/* Delete Action Button */}
-                        <button class='delete-action-btn' onClick={() => removeTestAction(index)}>
-                            Delete Action
-                        </button>
                     </>
                 )}
             </div>

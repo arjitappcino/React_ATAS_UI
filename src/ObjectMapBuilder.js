@@ -197,7 +197,7 @@ function ObjectMapBuilder({ objectMapFile }) {
                     <label>Locator Value <span style={{ color: 'red' }}>*</span></label>
                     <input type="text" value={locatorValue} onChange={(e) => setLocatorValue(e.target.value)} placeholder="Generated XPath or enter manually" />
                 </div>
-                <button onClick={addObject} className="button-74">Add Object</button>
+                <button onClick={addObject} className="button-74" style={{backgroundColor: 'green'}}>Add Object</button>
                 {objectsData.length > 0 && (
                     <table className="object-table">
                         <thead>
@@ -248,7 +248,7 @@ function ObjectMapBuilder({ objectMapFile }) {
                     </button>
                     <button onClick={downloadJSON} className="button-74">Download JSON</button>
                     <button onClick={copyJSON} className="button-74">Copy JSON</button>
-                    <button onClick={resetState} className="button-74">Reset</button>
+                    <button onClick={resetState} className="button-74" style={{backgroundColor: 'grey'}}>Reset</button>
                 </div>
             </div>
         </div>
